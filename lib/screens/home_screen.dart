@@ -1,6 +1,5 @@
 import 'package:student_amaliyot_app/screens/widgets/appbar.dart';
 import 'package:student_amaliyot_app/screens/widgets/tap_bar.dart';
-
 import '../utils/tools/file_importers.dart';
 
 class HomePage extends StatelessWidget {
