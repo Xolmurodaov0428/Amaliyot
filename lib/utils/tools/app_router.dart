@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../screens/home_screen.dart'; // misol uchun
+import '../../screens/home_screen.dart';
+import '../../screens/login_screen.dart'; // misol uchun
 
 class RouteName {
   static const String home = '/home';
@@ -10,8 +11,7 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case RouteName.login:
-        return MaterialPageRoute(builder: (_) => const Scaffold()
-          // LoginScreen()
+        return MaterialPageRoute(builder: (_) => const  LoginScreen()
         );case RouteName.home:
         return MaterialPageRoute(builder: (_) => const HomePage());
 

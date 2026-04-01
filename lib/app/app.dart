@@ -13,7 +13,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: RouteName.home,
+      initialRoute: RouteName.login,
       onGenerateRoute: AppRouter.generateRoute,
       title: "Amaliyot",
       theme: ThemeData(

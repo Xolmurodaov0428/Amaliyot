@@ -1,5 +1,6 @@
 import 'package:student_amaliyot_app/widgets/davomat_page.dart';
-
+import 'package:student_amaliyot_app/widgets/home_page.dart';
+import 'package:student_amaliyot_app/widgets/topshiriq_page.dart';
 import '../../utils/tools/file_importers.dart';
 
 class TapBarPage extends StatelessWidget {
@@ -17,20 +18,25 @@ class TapBarPage extends StatelessWidget {
         child: DefaultTabController(
           length: 5,
           child: Scaffold(
-            body: const TabBarView(
-              physics: BouncingScrollPhysics(),
+            body: TabBarView(
+              physics: const BouncingScrollPhysics(),
               children: [
-                Center(child: Text("🏠 Asosiy sahifa", style: TextStyle(fontSize: 20))),
-                Center(child: Text("📋 Topshiriqlar", style: TextStyle(fontSize: 20))),
-                // Center(child: Text("📅 Davomat", style: TextStyle(fontSize: 20))),
-                DavomatPage(),
-                Center(child: Text("📸 Rasmga tushirish sahifasi", style: TextStyle(fontSize: 20))),
-                Center(child: Text("⚙️ Sozlamalar", style: TextStyle(fontSize: 20))),
+                HomePage1(), // <-- SHU YERDA SCROLL YO'Q BO'LSIN!
 
+                // Center(child: Text("📋 Topshiriqlar", style: TextStyle(fontSize: 20))),
+
+                TopshiriqlarPage(),
+
+                DavomatPage(), // bunda scroll bo‘lsa o‘zida bo‘lsin
+
+                Center(child: Text("📸 Kamera", style: TextStyle(fontSize: 20))),
+
+                Center(child: Text("⚙️ Sozlamalar", style: TextStyle(fontSize: 20))),
               ],
             ),
 
-            bottomNavigationBar: Container(height: 90,
+            bottomNavigationBar: Container(
+              height: 90,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.blue, Colors.purple],
