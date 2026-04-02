@@ -1,3 +1,4 @@
+import 'package:student_amaliyot_app/screens/widgets/faoliyat/faoliyat_screen.dart';
 import 'package:student_amaliyot_app/widgets/davomat_page.dart';
 import 'package:student_amaliyot_app/widgets/home_page.dart';
 import 'package:student_amaliyot_app/widgets/topshiriq_page.dart';
@@ -29,7 +30,8 @@ class TapBarPage extends StatelessWidget {
 
                 DavomatPage(), // bunda scroll bo‘lsa o‘zida bo‘lsin
 
-                Center(child: Text("📸 Kamera", style: TextStyle(fontSize: 20))),
+                // Center(child: Text("📸 Hujjatlar", style: TextStyle(fontSize: 20))),
+                FaoliyatPage(),
 
                 Center(child: Text("⚙️ Sozlamalar", style: TextStyle(fontSize: 20))),
               ],
@@ -58,7 +60,7 @@ class TapBarPage extends StatelessWidget {
                   Tab(icon: Icon(Icons.home), text: "Bosh sahifa"),
                   Tab(icon: Icon(Icons.assignment), text: "Topshiriqlar"),
                   Tab(icon: Icon(Icons.calendar_today), text: "Davomat"),
-                  Tab(icon: Icon(Icons.camera_alt), text: "Kamera"),
+                  Tab(icon: Icon(Icons.camera_alt), text: "Hujjatlar"),
                   Tab(icon: Icon(Icons.settings), text: "Sozlamalar"),
                 ],
               ),
