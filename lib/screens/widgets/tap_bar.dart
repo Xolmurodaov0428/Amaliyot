@@ -3,6 +3,7 @@ import 'package:student_amaliyot_app/widgets/davomat_page.dart';
 import 'package:student_amaliyot_app/widgets/home_page.dart';
 import 'package:student_amaliyot_app/widgets/topshiriq_page.dart';
 import '../../utils/tools/file_importers.dart';
+import '../sozlamalar_screen.dart';
 
 class TapBarPage extends StatelessWidget {
   const TapBarPage({super.key});
@@ -33,7 +34,8 @@ class TapBarPage extends StatelessWidget {
                 // Center(child: Text("📸 Hujjatlar", style: TextStyle(fontSize: 20))),
                 FaoliyatPage(),
 
-                Center(child: Text("⚙️ Sozlamalar", style: TextStyle(fontSize: 20))),
+                // Center(child: Text("⚙️ Sozlamalar", style: TextStyle(fontSize: 20))),
+                SettingPage()
               ],
             ),
 

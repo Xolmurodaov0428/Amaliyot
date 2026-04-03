@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'kundalik_screen.dart';
 import 'shartnoma_screen.dart';
-import 'buyruq_screen.dart';
+import 'rasim_screen.dart';
 
 class FaoliyatPage extends StatelessWidget {
   const FaoliyatPage({super.key});
@@ -16,21 +16,6 @@ class FaoliyatPage extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 20),
-
-              // // Sarlavha (AppBar o'rniga)
-              // const Text(
-              //   "Faoliyat",
-              //   style: TextStyle(
-              //     fontSize: 24,
-              //     fontWeight: FontWeight.w800,
-              //     color: Color(0xFF1A1A1A),
-              //     letterSpacing: -0.5,
-              //   ),
-              // ),
-
-              // const SizedBox(height: 20),
-
-              // Premium ko'rinishdagi TabBar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -68,8 +53,8 @@ class FaoliyatPage extends StatelessWidget {
                     ),
                     tabs: const [
                       Tab(text: "Kundalik"),
-                      Tab(text: "Shartnoma"),
-                      Tab(text: "Buyruq"),
+                      Tab(text: "Hujjatlar"),
+                      Tab(text: "Rasimlar"),
                     ],
                   ),
                 ),
@@ -85,7 +70,7 @@ class FaoliyatPage extends StatelessWidget {
                   children: [
                     KundalikScreen(),
                     ShartnomaScreen(),
-                    BuyruqScreen(),
+                    RasimlarScreen(),
                   ],
                 ),
               ),

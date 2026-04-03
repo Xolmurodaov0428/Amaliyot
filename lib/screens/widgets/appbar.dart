@@ -44,6 +44,7 @@ class AppBarPage extends StatelessWidget {
   }
 
   @override
+
   Widget build(BuildContext context) {
     return Container(
       height: 90,
@@ -69,13 +70,21 @@ class AppBarPage extends StatelessWidget {
         alignment: Alignment.center,
         children: [
 
-          // ── 🌐 Til ikonasi — o'ng tomon ──────────────────────────────────
+          // Bildirish nomalar — o'ng tomon ──────────────────────────────────
           Positioned(
             right: 8,
             child: IconButton(
-              tooltip: 'Tilni o\'zgartirish',
-              icon: const Icon(Icons.language, color: Colors.white, size: 28),
-              onPressed: onLanguageTap ?? () {},
+              tooltip: '',
+              icon: Icon(
+                // hasNotification
+                //     ?
+                //     Icons.notifications_active_outlined
+                //     :
+              Icons.notifications_none,
+                color: Colors.white,
+                size: 33,
+              ),
+              onPressed: () {},
             ),
           ),
 
@@ -96,7 +105,7 @@ class AppBarPage extends StatelessWidget {
           Positioned(
             left: 8,
             child: Tooltip(
-              message: 'Profilni ko\'rish',
+              message: '',
               child: GestureDetector(
                 onTap: () => _openProfile(context),
                 child: // Hero widget: AkkountPage ichida ham xuddi shu heroTag

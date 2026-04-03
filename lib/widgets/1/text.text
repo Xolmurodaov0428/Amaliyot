@@ -1,0 +1,377 @@
+// Hozircha senda til faqat **Settings ichida tanlanmoqda**.
+// Endi **hamma sahifada ishlashi** uchun tilni **global state** ga chiqarish kerak.
+//
+// Ya’ni 3 ta ish qilinadi:
+//
+// ---
+//
+// # 1. `main.dart` da global language state bo‘lishi kerak
+//
+// Eng to‘g‘ri usul — `MaterialApp` ni `locale` bilan boshqarish.
+//
+// ## `main.dart`
+//
+// ```dart
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:student_amaliyot_app/screens/setting_page.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  final savedLanguage = prefs.getString('lang') ?? 'uz';
+
+  runApp(MyApp(initialLanguage: savedLanguage));
+}
+
+class MyApp extends StatefulWidget {
+  final String initialLanguage;
+
+  const MyApp({
+    super.key,
+    required this.initialLanguage,
+  });
+
+  static _MyAppState? of(BuildContext context) {
+    return context.findAncestorStateOfType<_MyAppState>();
+  }
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late String currentLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    currentLanguage = widget.initialLanguage;
+  }
+
+  Future<void> changeLanguage(String code) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('lang', code);
+
+    setState(() {
+      currentLanguage = code;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: const SettingPage(),
+    );
+  }
+}
+//```
+//
+//---
+//
+//# 2. Tarjimalar uchun bitta common class kerak
+//
+//Masalan `lib/core/app_texts.dart`
+//
+//```dart
+class AppTexts {
+  static const Map<String, Map<String, String>> values = {
+    'uz': {
+      'settings': 'Sozlamalar',
+      'profile': 'Profil',
+      'security': 'Xavfsizlik',
+      'language': 'Til',
+      'notifications': 'Bildirishnomalar',
+      'appearance': 'Ko\'rinish',
+      'about_app': 'Ilova haqida',
+      'contact': 'Bog\'lanish',
+      'logout': 'Chiqish',
+      'edit_profile': 'Ma\'lumotlaringizni tahrirlang',
+      'security_desc': 'Parol va autentifikatsiya',
+      'notifications_desc': 'Push va email xabarnomalar',
+      'appearance_desc': 'Mavzu va rang sxemasi',
+      'contact_desc': 'Savollar va muammolar bo\'yicha yordam',
+      'about_desc': 'Versiya, litsenziya va aloqa',
+      'account_security': 'Hisob va Xavfsizlik',
+      'app_settings': 'Ilova sozlamalari',
+      'other': 'Boshqa',
+    },
+    'ru': {
+      'settings': 'Настройки',
+      'profile': 'Профиль',
+      'security': 'Безопасность',
+      'language': 'Язык',
+      'notifications': 'Уведомления',
+      'appearance': 'Оформление',
+      'about_app': 'О приложении',
+      'contact': 'Связь',
+      'logout': 'Выйти',
+      'edit_profile': 'Редактировать данные',
+      'security_desc': 'Пароль и аутентификация',
+      'notifications_desc': 'Push и email уведомления',
+      'appearance_desc': 'Тема и цветовая схема',
+      'contact_desc': 'Помощь по вопросам и проблемам',
+      'about_desc': 'Версия, лицензия и контакты',
+      'account_security': 'Аккаунт и безопасность',
+      'app_settings': 'Настройки приложения',
+      'other': 'Другое',
+    },
+    'en': {
+      'settings': 'Settings',
+      'profile': 'Profile',
+      'security': 'Security',
+      'language': 'Language',
+      'notifications': 'Notifications',
+      'appearance': 'Appearance',
+      'about_app': 'About app',
+      'contact': 'Contact',
+      'logout': 'Logout',
+      'edit_profile': 'Edit your information',
+      'security_desc': 'Password and authentication',
+      'notifications_desc': 'Push and email notifications',
+      'appearance_desc': 'Theme and color scheme',
+      'contact_desc': 'Help for questions and issues',
+      'about_desc': 'Version, license and contact',
+      'account_security': 'Account and Security',
+      'app_settings': 'App settings',
+      'other': 'Other',
+    },
+    'qr': {
+      'settings': 'Sazlamalar',
+      'profile': 'Profil',
+      'security': 'Qáwipsizlik',
+      'language': 'Til',
+      'notifications': 'Bildiriwler',
+      'appearance': 'Kórinis',
+      'about_app': 'Baǵdarlama haqqında',
+      'contact': 'Baylanıs',
+      'logout': 'Shıǵıw',
+      'edit_profile': 'Maǵlıwmatlarıńızdı ózgertiw',
+      'security_desc': 'Parol hám autentifikaciya',
+      'notifications_desc': 'Push hám email xabarlamaları',
+      'appearance_desc': 'Tema hám tús sxeması',
+      'contact_desc': 'Suraqlar hám mashaqatlar boyınsha járdem',
+      'about_desc': 'Versiya, licenziya hám baylanıs',
+      'account_security': 'Esap hám qáwipsizlik',
+      'app_settings': 'Baǵdarlama sazlamaları',
+      'other': 'Basqa',
+    },
+    'uzc': {
+      'settings': 'Созламалар',
+      'profile': 'Профил',
+      'security': 'Хавфсизлик',
+      'language': 'Тил',
+      'notifications': 'Билдиришномалар',
+      'appearance': 'Кўриниш',
+      'about_app': 'Илова ҳақида',
+      'contact': 'Боғланиш',
+      'logout': 'Чиқиш',
+      'edit_profile': 'Маълумотларингизни таҳрирланг',
+      'security_desc': 'Парол ва аутентификация',
+      'notifications_desc': 'Push ва email хабарномалар',
+      'appearance_desc': 'Мавзу ва ранг схемаси',
+      'contact_desc': 'Саволлар ва муаммолар бўйича ёрдам',
+      'about_desc': 'Версия, лицензия ва алоқа',
+      'account_security': 'Ҳисоб ва Хавфсизлик',
+      'app_settings': 'Илова созламалари',
+      'other': 'Бошқа',
+    },
+  };
+
+  static String text(String lang, String key) {
+    return values[lang]?[key] ?? values['uz']![key] ?? key;
+  }
+}
+//```
+//
+//---
+//
+//# 3. Har bir sahifada shu textlarni ishlatish kerak
+//
+//Masalan `SettingPage` da:
+//
+//```dart
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:student_amaliyot_app/core/app_texts.dart';
+import 'package:student_amaliyot_app/main.dart';
+import 'package:student_amaliyot_app/screens/profile_screen.dart';
+import 'package:student_amaliyot_app/screens/setting/language_screen.dart';
+//```
+//
+//`build` ichida:
+//
+//```dart
+//final currentLanguage = MyApp.of(context)?.currentLanguage ?? 'uz';
+//```
+//
+//Lekin `currentLanguage` private bo‘lib qolmasligi uchun `main.dart` dagi statega getter qo‘shamiz.
+//
+//## `main.dart` ichida:
+//
+//```dart
+//String get languageCode => currentLanguage;
+//```
+//
+//To‘liq bu qism:
+//
+//```dart
+class _MyAppState extends State<MyApp> {
+  late String currentLanguage;
+
+  String get languageCode => currentLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    currentLanguage = widget.initialLanguage;
+  }
+
+  Future<void> changeLanguage(String code) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('lang', code);
+
+    setState(() {
+      currentLanguage = code;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: const SettingPage(),
+    );
+  }
+}
+//```
+//
+//---
+//
+//# 4. `SettingPage` da til o‘zgarganda global update qilish kerak
+//
+//`showLanguageSheet` ichida:
+//
+//```dart
+Future<void> showLanguageSheet(BuildContext context) async {
+  final appState = MyApp.of(context);
+  final currentLanguage = appState?.languageCode ?? 'uz';
+
+  final result = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(24),
+      ),
+    ),
+    builder: (_) => LanguageSheet(
+      selectedLanguageCode: currentLanguage,
+    ),
+  );
+
+  if (result != null && result != currentLanguage) {
+    await appState?.changeLanguage(result);
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+}
+//```
+//
+//---
+//
+//# 5. Matnlarni endi static emas, translation orqali yozish kerak
+//
+//Masalan:
+//
+//### Oldin:
+//
+//```dart
+title: 'Profil',
+subtitle: 'Ma\'lumotlaringizni tahrirlang',
+//```
+//
+//### Endi:
+//
+//```dart
+final lang = MyApp.of(context)?.languageCode ?? 'uz';
+```
+
+```dart
+title: AppTexts.text(lang, 'profile'),
+subtitle: AppTexts.text(lang, 'edit_profile'),
+```
+
+Shu usulni barcha sahifalarda qilasan:
+
+* HomePage
+* TopshiriqlarPage
+* DavomatPage
+* FaoliyatPage
+* SozlamalarPage
+
+---
+
+# 6. Qayerlarni o‘zgartirish kerak
+
+Hamma sahifada:
+
+* `Text("...")`
+* `title: '...'`
+* `subtitle: '...'`
+* `AppBar(title: Text('...'))`
+* `SnackBar(content: Text('...'))`
+* `ElevatedButton(child: Text('...'))`
+
+hammasini `AppTexts.text(lang, 'key')` ga o‘tkazish kerak.
+
+---
+
+# 7. Minimal ishlaydigan misol
+
+```dart
+@override
+Widget build(BuildContext context) {
+final lang = MyApp.of(context)?.languageCode ?? 'uz';
+
+return Scaffold(
+appBar: AppBar(
+title: Text(AppTexts.text(lang, 'settings')),
+),
+body: Center(
+child: Text(AppTexts.text(lang, 'profile')),
+),
+);
+}
+```
+
+---
+
+# 8. Sen uchun eng to‘g‘ri arxitektura
+
+Soddaroq usul:
+
+* `SharedPreferences` — saqlash uchun
+* `MyApp` state — global language uchun
+* `AppTexts` — tarjima map uchun
+
+Bu hozirgi loyihangga eng mos.
+
+---
+
+# 9. Xulosa
+
+Hamma sahifada ishlashi uchun:
+
+1. `main.dart` da global `currentLanguage` bo‘lishi kerak
+2. `changeLanguage()` global bo‘lishi kerak
+3. `AppTexts` degan umumiy tarjima fayl kerak
+4. har bir sahifadagi matnlar `AppTexts.text(lang, key)` orqali olinishi kerak
+5. `SettingPage` tanlanganda `MyApp.of(context)?.changeLanguage(...)` chaqirishi kerak
+
+Agar xohlasang, keyingi xabarda men senga **main.dart + app_texts.dart + SettingPage** ni bir-biriga ulangan, copy-paste tayyor holatda yozib beraman.

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app/app.dart';
 
-// void main() {
-//   runApp(const MyApp());
-// }
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Faqat portret (vertikal) holatga ruxsat berish
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown, // optional
+    DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const MyApp());
+  final prefs = await SharedPreferences.getInstance();
+  final savedLanguage = prefs.getString('lang') ?? 'uz';
+
+  runApp(
+    MyApp(initialLanguageCode: savedLanguage),
+  );
 }
