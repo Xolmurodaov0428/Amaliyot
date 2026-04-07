@@ -693,77 +693,106 @@ class _KundalikScreenState extends State<KundalikScreen> {
 
     return Column(
       children: _reports.map((item) {
-        final canEdit = item.status == 'pending';
+        // Tahrirlash va o'chirish huquqi (model ichidagi canEdit getter ishlatamiz)
+        final bool canEditOrDelete = item.canEdit;
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.templateTitle.isEmpty
-                      ? 'Kundalik #${item.id}'
-                      : item.templateTitle,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.templateTitle.isEmpty
+                            ? 'Kundalik #${item.id}'
+                            : item.templateTitle,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    // Holat badge'ini ko'rsatamiz
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: item.statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        item.statusLabel,
+                        style: TextStyle(
+                          color: item.statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
-                if (item.note.isNotEmpty) Text(item.note),
-                Text('Holat: ${item.statusLabel}'),
-                if (item.submittedAt.isNotEmpty) Text('Sana: ${item.submittedAt}'),
-                if (item.rejectReason.isNotEmpty)
-                  Text('Sabab: ${item.rejectReason}'),
-                const SizedBox(height: 12),
+                if (item.note.isNotEmpty)
+                  Text(
+                    item.note,
+                    style: const TextStyle(color: Colors.black87),
+                  ),
+                if (item.submittedAt.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Sana: ${item.submittedAt}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ),
+                if (item.rejectReason.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Izoh: ${item.rejectReason}',
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                    ),
+                  ),
+                ],
+                const Divider(height: 24),
                 if (item.templateFileUrl.isNotEmpty)
-                  Row(
-                    children: [
-                      const Icon(Icons.description_outlined, size: 18),
-                      const SizedBox(width: 6),
-                      const Expanded(
-                        child: Text(
-                          'Shablon fayli',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => _openFile(item.templateFileUrl),
-                        child: const Text('Ochish'),
-                      ),
-                    ],
+                  _buildFileRow(
+                    icon: Icons.description_outlined,
+                    label: 'Shablon fayli',
+                    onOpen: () => _openFile(item.templateFileUrl),
                   ),
                 if (item.studentFileUrl.isNotEmpty)
-                  Row(
-                    children: [
-                      const Icon(Icons.attach_file, size: 18),
-                      const SizedBox(width: 6),
-                      const Expanded(
-                        child: Text(
-                          'Talaba yuborgan fayl',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => _openFile(item.studentFileUrl),
-                        child: const Text('Ochish'),
-                      ),
-                    ],
+                  _buildFileRow(
+                    icon: Icons.attach_file,
+                    label: 'Talaba yuborgan fayl',
+                    onOpen: () => _openFile(item.studentFileUrl),
                   ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (canEdit)
-                      IconButton(
-                        icon: const Icon(Icons.edit),
+                    if (canEditOrDelete)
+                      TextButton.icon(
                         onPressed: () => _openEditSheet(item),
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Tahrirlash'),
                       ),
-                    if (canEdit)
+                    if (canEditOrDelete) const SizedBox(width: 8),
+                    if (canEditOrDelete)
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
                         onPressed: () => _deleteReport(item),
                       ),
                   ],
@@ -773,6 +802,32 @@ class _KundalikScreenState extends State<KundalikScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildFileRow({
+    required IconData icon,
+    required String label,
+    required VoidCallback onOpen,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey[700]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          TextButton(
+            onPressed: onOpen,
+            child: const Text('Ochish'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -826,14 +881,45 @@ class StudentReportModel {
     required this.studentFileUrl,
   });
 
+  // Tahrirlash va o'chirish huquqi
+  bool get canEdit {
+    final s = status.toLowerCase().trim();
+    // 'submitted' (yuborilgan) va 'rejected' (rad etilgan) va 'pending' ruxsat beriladi
+    // 'approved' (tasdiqlangan) bo'lsa tahrirlab bo'lmaydi
+    return s == 'pending' || s == 'submitted' || s == 'rejected' || s == '';
+  }
+
+  // Holat rangi (UI badge uchun)
+  Color get statusColor {
+    final s = status.toLowerCase().trim();
+    switch (s) {
+      case 'approved':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'submitted':
+        return Colors.blue;
+      case 'pending':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Holat matni
   String get statusLabel {
-    switch (status) {
+    final s = status.toLowerCase().trim();
+    switch (s) {
       case 'approved':
         return 'Tasdiqlandi';
       case 'rejected':
         return 'Rad etildi';
-      default:
+      case 'submitted':
+        return 'Yuborildi';
+      case 'pending':
         return 'Kutilmoqda';
+      default:
+        return 'Noma’lum';
     }
   }
 
@@ -877,20 +963,31 @@ class StudentReportModel {
     fileBaseUrlBuilder(json['report_file_url']?.toString());
     final templateFile = fileBaseUrlBuilder(template?['file_url']?.toString());
 
+    // Status parsing (status ?? state ?? 'pending')
+    final statusValue = (json['status'] ?? json['state'] ?? 'pending').toString();
+
+    // submittedAt parsing (submitted_at ?? created_at ?? '')
+    final submittedAtValue =
+        (json['submitted_at'] ?? json['created_at'] ?? '').toString();
+
+    // rejectReason parsing (supervisor_comment ?? reject_reason ?? '')
+    final rejectReasonValue =
+        (json['supervisor_comment'] ?? json['reject_reason'] ?? '').toString();
+
     return StudentReportModel(
       id: _toInt(json['id']),
       templateId: _toInt(json['daily_template_id'] ?? json['template_id']),
       templateTitle: (template?['title'] ?? '').toString(),
-      status: (json['status'] ?? 'pending').toString(),
-      submittedAt: (json['submitted_at'] ?? '').toString(),
+      status: statusValue,
+      submittedAt: submittedAtValue,
       note: noteValue,
-      rejectReason: (json['supervisor_comment'] ?? '').toString(),
+      rejectReason: rejectReasonValue,
       templateFileUrl: templateFile,
       studentFileUrl: uploadedFileUrl.isNotEmpty
           ? uploadedFileUrl
           : (nestedStudentFileUrl.isNotEmpty
-          ? nestedStudentFileUrl
-          : directStudentFileUrl),
+              ? nestedStudentFileUrl
+              : directStudentFileUrl),
     );
   }
 }

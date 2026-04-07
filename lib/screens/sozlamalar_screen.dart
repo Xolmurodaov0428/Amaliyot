@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_amaliyot_app/app/app.dart';
 import 'package:student_amaliyot_app/screens/profile_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/language_screen.dart';
+
+import 'login_screen.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -154,8 +157,22 @@ class _SettingPageState extends State<SettingPage> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // logout logic
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+
+                    // 🔥 tokenni o‘chiramiz
+                    await prefs.remove('token');
+
+                    if (!mounted) return;
+
+                    // 🔥 login sahifaga qaytish (barcha oldingi sahifalarni o‘chiradi)
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                          (route) => false,
+                    );
                   },
                   icon: const Icon(
                     Icons.logout_rounded,
