@@ -16,7 +16,8 @@ class KundalikScreen extends StatefulWidget {
 }
 
 class _KundalikScreenState extends State<KundalikScreen> {
-  static const String _baseUrl = 'https://shaxa.mycoder.uz/api';
+  static const String _apiBaseUrl = 'https://shaxa.mycoder.uz/api';
+  static const String _siteBaseUrl = 'https://shaxa.mycoder.uz';
 
   bool _loadingTemplates = true;
   bool _loadingReports = true;
@@ -54,7 +55,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null || token.trim().isEmpty) return null;
-    return token;
+    return token.trim();
   }
 
   Map<String, String> _headers(String token, {bool json = false}) {
@@ -65,14 +66,58 @@ class _KundalikScreenState extends State<KundalikScreen> {
     };
   }
 
+  Uri _buildApiUri(String path) {
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return Uri.parse('$_apiBaseUrl/$cleanPath');
+  }
+
+  String _buildFileUrl(String? rawUrl) {
+    final value = (rawUrl ?? '').trim();
+    if (value.isEmpty) return '';
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    if (value.startsWith('/')) {
+      return '$_siteBaseUrl$value';
+    }
+
+    return '$_siteBaseUrl/$value';
+  }
+
+  List<dynamic> _extractListData(dynamic data) {
+    if (data is List) return data;
+    if (data is Map<String, dynamic>) {
+      final nested = data['data'];
+      if (nested is List) return nested;
+    }
+    return [];
+  }
+
+  Map<String, dynamic> _safeJsonMap(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<void> _loadTemplates() async {
-    setState(() {
-      _loadingTemplates = true;
-      _templateError = '';
-    });
+    if (mounted) {
+      setState(() {
+        _loadingTemplates = true;
+        _templateError = '';
+      });
+    }
 
     try {
       final token = await _token();
+
+      if (!mounted) return;
+
       if (token == null) {
         setState(() {
           _templateError = 'Token topilmadi';
@@ -82,17 +127,22 @@ class _KundalikScreenState extends State<KundalikScreen> {
       }
 
       final res = await _client.get(
-        Uri.parse('$_baseUrl/student/dailies'),
+        _buildApiUri('student/dailies'),
         headers: _headers(token),
       );
 
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final body = _safeJsonMap(res.body);
+
+      if (!mounted) return;
 
       if (res.statusCode == 200 && body['success'] == true) {
-        final List items = body['data'] ?? [];
+        final items = _extractListData(body['data']);
         setState(() {
           _templates = items
-              .map((e) => DailyTemplateModel.fromJson(e as Map<String, dynamic>))
+              .whereType<Map>()
+              .map((e) => DailyTemplateModel.fromJson(
+            Map<String, dynamic>.from(e),
+          ))
               .toList();
           _loadingTemplates = false;
         });
@@ -104,6 +154,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _templateError = 'Xato: $e';
         _loadingTemplates = false;
@@ -112,13 +163,18 @@ class _KundalikScreenState extends State<KundalikScreen> {
   }
 
   Future<void> _loadReports() async {
-    setState(() {
-      _loadingReports = true;
-      _reportError = '';
-    });
+    if (mounted) {
+      setState(() {
+        _loadingReports = true;
+        _reportError = '';
+      });
+    }
 
     try {
       final token = await _token();
+
+      if (!mounted) return;
+
       if (token == null) {
         setState(() {
           _reportError = 'Token topilmadi';
@@ -128,17 +184,23 @@ class _KundalikScreenState extends State<KundalikScreen> {
       }
 
       final res = await _client.get(
-        Uri.parse('$_baseUrl/student/reports'),
+        _buildApiUri('student/reports'),
         headers: _headers(token),
       );
 
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final body = _safeJsonMap(res.body);
+
+      if (!mounted) return;
 
       if (res.statusCode == 200 && body['success'] == true) {
-        final List items = body['data'] ?? [];
+        final items = _extractListData(body['data']);
         setState(() {
           _reports = items
-              .map((e) => StudentReportModel.fromJson(e as Map<String, dynamic>))
+              .whereType<Map>()
+              .map((e) => StudentReportModel.fromJson(
+            Map<String, dynamic>.from(e),
+            fileBaseUrlBuilder: _buildFileUrl,
+          ))
               .toList();
           _loadingReports = false;
         });
@@ -150,6 +212,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _reportError = 'Xato: $e';
         _loadingReports = false;
@@ -162,10 +225,15 @@ class _KundalikScreenState extends State<KundalikScreen> {
       String note,
       PlatformFile? file,
       ) async {
-    setState(() => _submitting = true);
+    if (mounted) {
+      setState(() => _submitting = true);
+    }
 
     try {
       final token = await _token();
+
+      if (!mounted) return;
+
       if (token == null) {
         _show('Token topilmadi', error: true);
         return;
@@ -173,7 +241,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
 
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('$_baseUrl/student/reports'),
+        _buildApiUri('student/reports'),
       );
 
       request.headers['Authorization'] = 'Bearer $token';
@@ -207,10 +275,9 @@ class _KundalikScreenState extends State<KundalikScreen> {
       debugPrint('CREATE REPORT STATUS: ${response.statusCode}');
       debugPrint('CREATE REPORT BODY: ${response.body}');
 
-      Map<String, dynamic> body = {};
-      try {
-        body = jsonDecode(response.body) as Map<String, dynamic>;
-      } catch (_) {}
+      final body = _safeJsonMap(response.body);
+
+      if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _show('Kundalik yuborildi');
@@ -221,11 +288,11 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (response.statusCode == 422) {
         final errors = body['errors'];
         if (errors is Map) {
-          final firstError = errors.values.isNotEmpty
-              ? (errors.values.first as List).first.toString()
-              : 'Validatsiya xatosi';
-          _show(firstError, error: true);
-          return;
+          final firstValue = errors.values.isNotEmpty ? errors.values.first : null;
+          if (firstValue is List && firstValue.isNotEmpty) {
+            _show(firstValue.first.toString(), error: true);
+            return;
+          }
         }
       }
 
@@ -236,9 +303,12 @@ class _KundalikScreenState extends State<KundalikScreen> {
       );
     } catch (e) {
       debugPrint('CREATE REPORT EXCEPTION: $e');
+      if (!mounted) return;
       _show('Xato: $e', error: true);
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 
@@ -247,10 +317,15 @@ class _KundalikScreenState extends State<KundalikScreen> {
       String note,
       PlatformFile? file,
       ) async {
-    setState(() => _submitting = true);
+    if (mounted) {
+      setState(() => _submitting = true);
+    }
 
     try {
       final token = await _token();
+
+      if (!mounted) return;
+
       if (token == null) {
         _show('Token topilmadi', error: true);
         return;
@@ -258,7 +333,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
 
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('$_baseUrl/student/reports/${report.id}'),
+        _buildApiUri('student/reports/${report.id}'),
       );
 
       request.headers['Authorization'] = 'Bearer $token';
@@ -288,13 +363,9 @@ class _KundalikScreenState extends State<KundalikScreen> {
 
       final streamed = await request.send();
       final bodyText = await streamed.stream.bytesToString();
+      final body = _safeJsonMap(bodyText);
 
-      Map<String, dynamic> body = {};
-      if (bodyText.trim().isNotEmpty) {
-        try {
-          body = jsonDecode(bodyText) as Map<String, dynamic>;
-        } catch (_) {}
-      }
+      if (!mounted) return;
 
       if (streamed.statusCode == 200 || streamed.statusCode == 201) {
         _show('Kundalik tahrirlandi');
@@ -302,11 +373,11 @@ class _KundalikScreenState extends State<KundalikScreen> {
       } else if (streamed.statusCode == 422) {
         final errors = body['errors'];
         if (errors is Map) {
-          final firstError = errors.values.isNotEmpty
-              ? (errors.values.first as List).first.toString()
-              : 'Validatsiya xatosi';
-          _show(firstError, error: true);
-          return;
+          final firstValue = errors.values.isNotEmpty ? errors.values.first : null;
+          if (firstValue is List && firstValue.isNotEmpty) {
+            _show(firstValue.first.toString(), error: true);
+            return;
+          }
         }
         _show('Validatsiya xatosi', error: true);
       } else {
@@ -317,9 +388,12 @@ class _KundalikScreenState extends State<KundalikScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       _show('Xato: $e', error: true);
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 
@@ -345,51 +419,64 @@ class _KundalikScreenState extends State<KundalikScreen> {
 
     if (!ok) return;
 
-    setState(() => _submitting = true);
+    if (mounted) {
+      setState(() => _submitting = true);
+    }
 
     try {
       final token = await _token();
+
+      if (!mounted) return;
+
       if (token == null) {
         _show('Token topilmadi', error: true);
         return;
       }
 
       final res = await _client.delete(
-        Uri.parse('$_baseUrl/student/reports/${report.id}'),
+        _buildApiUri('student/reports/${report.id}'),
         headers: _headers(token),
       );
+
+      if (!mounted) return;
 
       if (res.statusCode == 200 || res.statusCode == 204) {
         _show('Kundalik o‘chirildi');
         await _loadReports();
       } else {
-        Map<String, dynamic> body = {};
-        try {
-          body = jsonDecode(res.body) as Map<String, dynamic>;
-        } catch (_) {}
+        final body = _safeJsonMap(res.body);
         _show(
           body['message']?.toString() ?? 'O‘chirishda xato',
           error: true,
         );
       }
     } catch (e) {
+      if (!mounted) return;
       _show('Xato: $e', error: true);
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 
   Future<void> _openFile(String url) async {
-    if (url.trim().isEmpty) {
+    final fixedUrl = _buildFileUrl(url);
+
+    if (fixedUrl.isEmpty) {
       _show('Fayl manzili yo‘q', error: true);
       return;
     }
 
-    setState(() => _openingFile = true);
+    if (mounted) {
+      setState(() => _openingFile = true);
+    }
 
     try {
       final token = await _token();
-      final uri = Uri.tryParse(url);
+      final uri = Uri.tryParse(fixedUrl);
+
+      if (!mounted) return;
 
       if (uri == null) {
         _show('Noto‘g‘ri fayl manzili', error: true);
@@ -404,12 +491,16 @@ class _KundalikScreenState extends State<KundalikScreen> {
         },
       );
 
+      if (!mounted) return;
+
       if (response.statusCode != 200) {
         _show('Faylni yuklab bo‘lmadi: ${response.statusCode}', error: true);
         return;
       }
 
       final dir = await getApplicationDocumentsDirectory();
+
+      if (!mounted) return;
 
       String fileName = uri.pathSegments.isNotEmpty
           ? uri.pathSegments.last
@@ -428,18 +519,25 @@ class _KundalikScreenState extends State<KundalikScreen> {
 
       final result = await OpenFilex.open(file.path);
 
+      if (!mounted) return;
+
       if (result.type != ResultType.done) {
         _show('Fayl ochilmadi: ${result.message}', error: true);
       }
     } catch (e) {
+      if (!mounted) return;
       _show('Faylni ochishda xato: $e', error: true);
     } finally {
-      if (mounted) setState(() => _openingFile = false);
+      if (mounted) {
+        setState(() => _openingFile = false);
+      }
     }
   }
 
   void _show(String message, {bool error = false}) {
     if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -482,7 +580,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
     final pageLoading = _submitting || _openingFile;
 
     return Scaffold(
-            body: pageLoading
+      body: pageLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
         onRefresh: _init,
@@ -526,12 +624,14 @@ class _KundalikScreenState extends State<KundalikScreen> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
+
     if (_templateError.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(child: Text(_templateError)),
       );
     }
+
     if (_templates.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -553,7 +653,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.download),
-                  onPressed: item.fileUrl.trim().isEmpty
+                  onPressed: item.fileUrl.isEmpty
                       ? null
                       : () => _openFile(item.fileUrl),
                 ),
@@ -576,12 +676,14 @@ class _KundalikScreenState extends State<KundalikScreen> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
+
     if (_reportError.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(child: Text(_reportError)),
       );
     }
+
     if (_reports.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -612,8 +714,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
                 const SizedBox(height: 8),
                 if (item.note.isNotEmpty) Text(item.note),
                 Text('Holat: ${item.statusLabel}'),
-                if (item.submittedAt.isNotEmpty)
-                  Text('Sana: ${item.submittedAt}'),
+                if (item.submittedAt.isNotEmpty) Text('Sana: ${item.submittedAt}'),
                 if (item.rejectReason.isNotEmpty)
                   Text('Sabab: ${item.rejectReason}'),
                 const SizedBox(height: 12),
@@ -736,37 +837,45 @@ class StudentReportModel {
     }
   }
 
-  factory StudentReportModel.fromJson(Map<String, dynamic> json) {
-    final fields = (json['fields'] as List?) ?? [];
+  factory StudentReportModel.fromJson(
+      Map<String, dynamic> json, {
+        required String Function(String?) fileBaseUrlBuilder,
+      }) {
+    final fieldsRaw = json['fields'];
+    final List fields = fieldsRaw is List ? fieldsRaw : [];
+
     String noteValue = '';
     String uploadedFileUrl = '';
 
     for (final field in fields) {
-      if (field is Map<String, dynamic>) {
-        final key = (field['field_key'] ?? '').toString();
-        final value = (field['field_value'] ?? '').toString();
+      if (field is Map) {
+        final map = Map<String, dynamic>.from(field);
+        final key = (map['field_key'] ?? '').toString();
+        final value = (map['field_value'] ?? '').toString();
 
         if (key == 'notes') {
           noteValue = value;
         }
 
-        if (key == 'file' ||
+        if ((key == 'file' ||
             key == 'file_url' ||
             key == 'report_file' ||
-            key == 'student_file' ||
-            key == 'report_file_name') {
-          if (value.startsWith('http://') || value.startsWith('https://')) {
-            uploadedFileUrl = value;
-          }
+            key == 'student_file') &&
+            value.trim().isNotEmpty) {
+          uploadedFileUrl = fileBaseUrlBuilder(value);
         }
       }
     }
 
-    final template = json['template'] as Map<String, dynamic>?;
+    final templateRaw = json['template'];
+    final template = templateRaw is Map<String, dynamic>
+        ? templateRaw
+        : (templateRaw is Map ? Map<String, dynamic>.from(templateRaw) : null);
 
-    final directStudentFileUrl = (json['file_url'] ?? '').toString();
-    final nestedStudentFileUrl = (json['report_file_url'] ?? '').toString();
-    final templateFile = (template?['file_url'] ?? '').toString();
+    final directStudentFileUrl = fileBaseUrlBuilder(json['file_url']?.toString());
+    final nestedStudentFileUrl =
+    fileBaseUrlBuilder(json['report_file_url']?.toString());
+    final templateFile = fileBaseUrlBuilder(template?['file_url']?.toString());
 
     return StudentReportModel(
       id: _toInt(json['id']),
@@ -821,6 +930,8 @@ class _ReportSheetState extends State<_ReportSheet> {
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
     );
+
+    if (!mounted) return;
 
     if (result != null && result.files.isNotEmpty) {
       setState(() => _file = result.files.first);

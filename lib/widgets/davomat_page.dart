@@ -52,11 +52,9 @@ class AttendanceRecord {
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> j) {
     return AttendanceRecord(
-      id: int.tryParse(j['id'].toString()) ?? 0,
-      studentId: int.tryParse(j['student_id'].toString()) ?? 0,
-      date: DateTime.parse(
-        j['date']?.toString() ?? DateTime.now().toIso8601String(),
-      ),
+      id: int.tryParse(j['id']?.toString() ?? '0') ?? 0,
+      studentId: int.tryParse(j['student_id']?.toString() ?? '0') ?? 0,
+      date: DateTime.tryParse(j['date']?.toString() ?? '') ?? DateTime.now(),
       session: j['session']?.toString() ?? 'session_1',
       status: j['status']?.toString() ?? 'absent',
       checkInTime: j['check_in_time']?.toString(),
@@ -158,7 +156,13 @@ class _DavomatPageState extends State<DavomatPage> {
   bool is9amChecked = false;
   bool is1pmChecked = false;
   bool is4pmChecked = false;
-  DateTime selectedDate = DateTime.now();
+  
+  // Normalize date to YMD
+  DateTime selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
 
   bool _isLoading = false;
   String _error = '';
@@ -203,6 +207,7 @@ class _DavomatPageState extends State<DavomatPage> {
   }
 
   void _syncCheckedSessionsFromHistory() {
+    if (!mounted) return;
     final existing = _existingSessionsForSelectedDate();
 
     setState(() {
@@ -428,6 +433,7 @@ class _DavomatPageState extends State<DavomatPage> {
 
   // GET API
   Future<void> _loadHistory() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = '';
@@ -435,49 +441,54 @@ class _DavomatPageState extends State<DavomatPage> {
 
     try {
       final token = await AuthService.getToken();
+      if (!mounted) return;
 
       if (token == null || token.isEmpty) {
         return _setError('Sessiya tugagan. Qayta kiring.');
       }
 
-      final res = await http
-          .get(
+      final res = await http.get(
         Uri.parse('https://shaxa.mycoder.uz/api/student/attendance'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
-      )
-          .timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 15));
 
       if (!mounted) return;
 
       if (res.statusCode == 200) {
-        final body = jsonDecode(res.body) as Map<String, dynamic>;
-        final data = body['data'] as Map<String, dynamic>?;
-
-        if (data == null) {
-          return _setError('Javobda data topilmadi.');
+        final dynamic body = jsonDecode(res.body);
+        if (body is! Map<String, dynamic>) {
+          return _setError('Server xatosi: noto‘g‘ri JSON format.');
         }
 
-        final student = data['student'] as Map<String, dynamic>?;
-        final attendances = (data['attendances'] as List<dynamic>? ?? []);
+        final dynamic data = body['data'];
+        if (data is! Map<String, dynamic>) {
+          return _setError('Ma’lumotlar topilmadi (data field missing).');
+        }
+
+        final dynamic student = data['student'];
+        final Map<String, dynamic>? studentMap = (student is Map) ? Map<String, dynamic>.from(student) : null;
+        
+        final dynamic attendancesRaw = data['attendances'];
+        final List<dynamic> attendancesList = (attendancesRaw is List) ? attendancesRaw : [];
 
         int apiDailySessions = 3;
-        if (student != null) {
+        if (studentMap != null) {
           apiDailySessions = int.tryParse(
-            student['daily-sesions']?.toString() ??
-                student['daily_sessions']?.toString() ??
-                '3',
-          ) ??
-              3;
+            studentMap['daily-sesions']?.toString() ??
+            studentMap['daily_sessions']?.toString() ??
+            '3'
+          ) ?? 3;
         }
 
         if (apiDailySessions < 1) apiDailySessions = 1;
         if (apiDailySessions > 3) apiDailySessions = 3;
 
-        final records = attendances
-            .map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))
+        final records = attendancesList
+            .whereType<Map>()
+            .map((e) => AttendanceRecord.fromJson(Map<String, dynamic>.from(e)))
             .toList();
 
         final Map<String, List<AttendanceRecord>> grouped = {};
@@ -489,7 +500,7 @@ class _DavomatPageState extends State<DavomatPage> {
         }
 
         final history = grouped.entries.map((e) {
-          final date = DateTime.parse(e.key);
+          final date = DateTime.tryParse(e.key) ?? DateTime.now();
           return DayAttendance(date, e.value, apiDailySessions);
         }).toList();
 
@@ -508,20 +519,23 @@ class _DavomatPageState extends State<DavomatPage> {
         _setError('Server xatosi (${res.statusCode}).');
       }
     } on SocketException {
-      if (mounted) _setError('Internet aloqasi mavjud emas.');
+      _setError('Internet aloqasi mavjud emas.');
     } on TimeoutException {
-      if (mounted) _setError('Server javob bermadi.');
+      _setError('Server javob bermadi.');
     } on FormatException {
-      if (mounted) _setError('Serverdan noto‘g‘ri JSON keldi.');
+      _setError('Serverdan noto‘g‘ri ma’lumot keldi.');
     } catch (e) {
-      if (mounted) _setError('Xato: $e');
+      _setError('Xato: $e');
     }
   }
 
-  void _setError(String msg) => setState(() {
-    _error = msg;
-    _isLoading = false;
-  });
+  void _setError(String msg) {
+    if (!mounted) return;
+    setState(() {
+      _error = msg;
+      _isLoading = false;
+    });
+  }
 
   // POST API
   Future<void> _save() async {
@@ -537,6 +551,8 @@ class _DavomatPageState extends State<DavomatPage> {
 
     final userId = await AuthService.getUserId();
     final token = await AuthService.getToken();
+
+    if (!mounted) return;
 
     if (userId == null || token == null || token.isEmpty) {
       _snack('Sessiya tugagan. Qayta kiring.', Colors.red);
@@ -554,19 +570,13 @@ class _DavomatPageState extends State<DavomatPage> {
         .toList();
 
     if (sessionsToSend.isEmpty) {
-      _snack(
-        'Bu sana uchun tanlangan seanslar allaqachon saqlangan.',
-        Colors.orange,
-      );
+      _snack('Bu sana uchun tanlangan seanslar allaqachon saqlangan.', Colors.orange);
       return;
     }
 
     for (final session in sessionsToSend) {
       if (_isTooEarlyForSession(session)) {
-        _snack(
-          '$session uchun vaqt hali kelmagan. Ruxsat: ${_sessionTimeText(session)}',
-          Colors.orange,
-        );
+        _snack('$session uchun vaqt hali kelmagan. Ruxsat: ${_sessionTimeText(session)}', Colors.orange);
         return;
       }
     }
@@ -575,11 +585,13 @@ class _DavomatPageState extends State<DavomatPage> {
       setState(() => _isLoading = true);
 
       final position = await _getCurrentPosition();
+      if (!mounted) return;
 
       for (final session in sessionsToSend) {
         final late = _isLateForSession(session);
 
         final body = {
+          // student_id backend'da tokendan olinishi kerak, lekin hozircha body'da yuboramiz
           'student_id': userId,
           'date': _selectedDateKey(),
           'session': session,
@@ -591,8 +603,7 @@ class _DavomatPageState extends State<DavomatPage> {
           'notes': late ? 'Kechikib keldi' : 'Check-in via mobile',
         };
 
-        final res = await http
-            .post(
+        final res = await http.post(
           Uri.parse('https://shaxa.mycoder.uz/api/student/attendance'),
           headers: {
             'Authorization': 'Bearer $token',
@@ -600,37 +611,25 @@ class _DavomatPageState extends State<DavomatPage> {
             'Accept': 'application/json',
           },
           body: jsonEncode(body),
-        )
-            .timeout(const Duration(seconds: 15));
+        ).timeout(const Duration(seconds: 15));
+
+        if (!mounted) return;
 
         if (res.statusCode != 200 && res.statusCode != 201) {
-          throw Exception('Server xatosi: ${res.statusCode} ${res.body}');
+          throw Exception('Server xatosi: ${res.statusCode}');
         }
       }
 
-      if (!mounted) return;
-
       final skippedCount = selectedSessions.length - sessionsToSend.length;
-
       if (skippedCount > 0) {
-        _snack(
-          '${sessionsToSend.length} ta yangi seans saqlandi, $skippedCount tasi oldin saqlangan.',
-          Colors.green,
-        );
+        _snack('${sessionsToSend.length} ta yangi seans saqlandi, $skippedCount tasi oldin bor.', Colors.green);
       } else {
         _snack('Davomat muvaffaqiyatli saqlandi! ✅', Colors.green);
       }
 
       await _loadHistory();
-
-      final existingAfterReload = _existingSessionsForSelectedDate();
-
-      setState(() {
-        is9amChecked = existingAfterReload.contains('session_1');
-        is1pmChecked = existingAfterReload.contains('session_2');
-        is4pmChecked = existingAfterReload.contains('session_3');
-        _isLoading = false;
-      });
+      
+      // _loadHistory already handles loading state and syncing checked boxes.
     } on SocketException {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -710,7 +709,7 @@ class _DavomatPageState extends State<DavomatPage> {
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
           icon: Icon(Icons.calendar_month, color: Colors.white, size: r.iconMd),
-          onPressed: _pickDate,
+          onPressed: _isLoading ? null : _pickDate,
         ),
         SizedBox(width: r.isXS ? 8 : 12),
         Expanded(
@@ -718,7 +717,7 @@ class _DavomatPageState extends State<DavomatPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bugungi sana',
+                'Tanlangan sana',
                 style: TextStyle(color: Colors.white70, fontSize: r.fs12),
               ),
               FittedBox(
@@ -993,7 +992,7 @@ class _DavomatPageState extends State<DavomatPage> {
             children: [
               Icon(Icons.error_outline, color: Colors.red.shade400, size: 48),
               const SizedBox(height: 12),
-              Text(_error, style: TextStyle(color: Colors.grey[700])),
+              Text(_error, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[700])),
               const SizedBox(height: 16),
               TextButton.icon(
                 onPressed: _loadHistory,
@@ -1133,11 +1132,21 @@ class _DavomatPageState extends State<DavomatPage> {
   );
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(2024, 1, 1);
+    final lastDate = DateTime(2026, 12, 31); // normalized end of period
+
+    // Initial date within range and normalized to YMD
+    final initialDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final safeInitialDate = initialDate.isAfter(lastDate)
+        ? lastDate
+        : (initialDate.isBefore(firstDate) ? firstDate : initialDate);
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2026),
+      initialDate: safeInitialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(primary: Colors.teal),
@@ -1146,15 +1155,19 @@ class _DavomatPageState extends State<DavomatPage> {
       ),
     );
 
+    if (!mounted) return;
+
     if (picked != null) {
       setState(() {
-        selectedDate = picked;
+        selectedDate = DateTime(picked.year, picked.month, picked.day);
       });
       _syncCheckedSessionsFromHistory();
     }
   }
 
   void _snack(String msg, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
