@@ -205,24 +205,27 @@ class ApiService {
       );
     }
 
+    // Backend’da token root level’da keladi: map['token']
+    final String? token = map['token']?.toString();
+
+    // Student ma'lumotlari map['data']['student'] ichida keladi
     final dynamic dataRaw = map['data'];
     if (dataRaw is! Map<String, dynamic>) {
       throw const ParseException('Javobda data topilmadi.');
     }
-
-    final String? token = dataRaw['token']?.toString();
 
     final dynamic studentRaw = dataRaw['student'];
     if (studentRaw is! Map<String, dynamic>) {
       throw const ParseException('Javobda student topilmadi.');
     }
 
+    // Student ID va boshqa ma'lumotlarni xavfsiz parse qilish
     final int? userId = studentRaw['id'] is int
         ? studentRaw['id'] as int
         : int.tryParse(studentRaw['id']?.toString() ?? '');
 
     final String? uname = studentRaw['username']?.toString();
-    final String? fullName = studentRaw['full_name']?.toString();
+    final String? fullName = (studentRaw['full_name'] ?? studentRaw['name'])?.toString();
 
     if (token == null || token.isEmpty) {
       throw const ParseException('Javobda token topilmadi.');

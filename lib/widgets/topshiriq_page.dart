@@ -681,7 +681,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                 Text(
                   _error,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF374151)),
+                  style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF94A3B8)),
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(

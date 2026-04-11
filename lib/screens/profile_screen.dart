@@ -34,38 +34,49 @@ class AuthService {
       )
           .timeout(const Duration(seconds: 15));
 
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final decoded = jsonDecode(res.body);
 
-      if (res.statusCode == 200 && body['success'] == true) {
-        final data = body['data'] as Map<String, dynamic>? ?? {};
-        final student = data['student'] as Map<String, dynamic>? ?? {};
-
-        final rawId = student['id'];
-        final int? userId =
-        rawId == null ? null : int.tryParse(rawId.toString());
-        final token = data['token']?.toString();
-        final uname = student['username']?.toString() ?? username;
-
-        if (userId == null || token == null || token.isEmpty) {
-          return AuthResult.failure(
-            "Server noto'g'ri javob berdi (id yoki token yo'q).",
-          );
-        }
-
-        await saveSession(
-          userId: userId,
-          token: token,
-          username: uname,
-        );
-
-        return AuthResult.success(userId: userId, token: token);
+      if (decoded is! Map<String, dynamic>) {
+        return AuthResult.failure("Server noto'g'ri formatda javob qaytardi.");
       }
 
-      final msg = body['message']?.toString() ??
-          body['detail']?.toString() ??
-          'Login xato (${res.statusCode})';
+      final body = decoded;
+      final data = body['data'] is Map<String, dynamic>
+          ? body['data'] as Map<String, dynamic>
+          : <String, dynamic>{};
 
-      return AuthResult.failure(msg);
+      final student = data['student'] is Map<String, dynamic>
+          ? data['student'] as Map<String, dynamic>
+          : <String, dynamic>{};
+
+      final rawId = student['id'];
+      final int? userId =
+      rawId == null ? null : int.tryParse(rawId.toString());
+
+      final token = body['token']?.toString().trim();
+
+      final studentUsername = student['username']?.toString().trim();
+      final uname =
+      (studentUsername != null && studentUsername.isNotEmpty)
+          ? studentUsername
+          : username;
+
+      if (userId == null || token == null || token.isEmpty) {
+        return AuthResult.failure(
+          "Server noto'g'ri javob berdi (id yoki token yo'q).",
+        );
+      }
+
+      await saveSession(
+        userId: userId,
+        token: token,
+        username: uname,
+      );
+
+      return AuthResult.success(
+        userId: userId,
+        token: token,
+      );
     } on SocketException {
       return AuthResult.failure('Internet aloqasi mavjud emas.');
     } on TimeoutException {
@@ -132,18 +143,20 @@ class AuthResult {
   factory AuthResult.success({
     required int userId,
     required String token,
-  }) =>
-      AuthResult._(
-        ok: true,
-        userId: userId,
-        token: token,
-      );
+  }) {
+    return AuthResult._(
+      ok: true,
+      userId: userId,
+      token: token,
+    );
+  }
 
-  factory AuthResult.failure(String error) =>
-      AuthResult._(
-        ok: false,
-        error: error,
-      );
+  factory AuthResult.failure(String error) {
+    return AuthResult._(
+      ok: false,
+      error: error,
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,7 +178,9 @@ class StudentGroup {
   });
 
   factory StudentGroup.fromJson(Map<String, dynamic> j) {
-    final directionJson = j['direction'] as Map<String, dynamic>?;
+    final directionJson = j['direction'] is Map<String, dynamic>
+        ? j['direction'] as Map<String, dynamic>
+        : null;
 
     return StudentGroup(
       id: int.tryParse(j['id'].toString()) ?? 0,
@@ -197,14 +212,15 @@ class StudentOrganization {
     this.email,
   });
 
-  factory StudentOrganization.fromJson(Map<String, dynamic> j) =>
-      StudentOrganization(
-        id: int.tryParse(j['id'].toString()) ?? 0,
-        name: j['name']?.toString() ?? '—',
-        address: j['address']?.toString(),
-        phone: j['phone']?.toString(),
-        email: j['email']?.toString(),
-      );
+  factory StudentOrganization.fromJson(Map<String, dynamic> j) {
+    return StudentOrganization(
+      id: int.tryParse(j['id'].toString()) ?? 0,
+      name: j['name']?.toString() ?? '—',
+      address: j['address']?.toString(),
+      phone: j['phone']?.toString(),
+      email: j['email']?.toString(),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,12 +254,21 @@ class StudentProfile {
   });
 
   factory StudentProfile.fromJson(Map<String, dynamic> json) {
-    final d = (json['data'] is Map<String, dynamic>)
+    final outerData = json['data'] is Map<String, dynamic>
         ? json['data'] as Map<String, dynamic>
         : json;
 
-    final groupJson = d['group'] as Map<String, dynamic>?;
-    final orgJson = d['organization'] as Map<String, dynamic>?;
+    final d = outerData['student'] is Map<String, dynamic>
+        ? outerData['student'] as Map<String, dynamic>
+        : outerData;
+
+    final groupJson = d['group'] is Map<String, dynamic>
+        ? d['group'] as Map<String, dynamic>
+        : null;
+
+    final orgJson = d['organization'] is Map<String, dynamic>
+        ? d['organization'] as Map<String, dynamic>
+        : null;
 
     return StudentProfile(
       id: int.tryParse(d['id'].toString()) ?? 0,
@@ -311,8 +336,9 @@ class _AkkountPageState extends State<AkkountPage>
     if (value == null || value.isEmpty) return 'Belgilanmagan';
 
     try {
-      final dt = DateTime.parse(value).toLocal();
-      return '${dt.year}-${_p(dt.month)}-${_p(dt.day)}';
+      final dt = DateTime.parse(value);
+      final local = dt.toLocal();
+      return '${local.year}-${_p(local.month)}-${_p(local.day)}';
     } catch (_) {
       return value;
     }
@@ -342,6 +368,8 @@ class _AkkountPageState extends State<AkkountPage>
   }
 
   Future<void> _loadProfile() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _error = '';
@@ -351,8 +379,11 @@ class _AkkountPageState extends State<AkkountPage>
       final apiService = ApiService();
       final token = await apiService.getToken();
 
+      if (!mounted) return;
+
       if (token == null || token.isEmpty) {
-        return _setError('Sessiya tugagan. Iltimos qayta kiring.');
+        _setError('Sessiya tugagan. Iltimos qayta kiring.');
+        return;
       }
 
       final res = await http
@@ -369,15 +400,21 @@ class _AkkountPageState extends State<AkkountPage>
 
       switch (res.statusCode) {
         case 200:
-          final body = json.decode(res.body) as Map<String, dynamic>;
+          final decoded = json.decode(res.body);
+          if (decoded is! Map<String, dynamic>) {
+            _setError("Serverdan noto'g'ri javob keldi.");
+            return;
+          }
+
           setState(() {
-            _profile = StudentProfile.fromJson(body);
+            _profile = StudentProfile.fromJson(decoded);
             _isLoading = false;
           });
           break;
 
         case 401:
           await apiService.clearSession();
+          if (!mounted) return;
           _setError('Sessiya tugagan. Iltimos qayta kiring.');
           break;
 
@@ -394,19 +431,18 @@ class _AkkountPageState extends State<AkkountPage>
           break;
       }
     } on SocketException {
-      if (mounted) _setError('Internet aloqasi mavjud emas.');
+      _setError('Internet aloqasi mavjud emas.');
     } on TimeoutException {
-      if (mounted) {
-        _setError("Server javob bermadi. Keyinroq urinib ko'ring.");
-      }
+      _setError("Server javob bermadi. Keyinroq urinib ko'ring.");
     } on FormatException {
-      if (mounted) _setError("Serverdan noto'g'ri javob keldi.");
+      _setError("Serverdan noto'g'ri javob keldi.");
     } catch (e) {
-      if (mounted) _setError('Xato: $e');
+      _setError('Xato: $e');
     }
   }
 
   void _setError(String msg) {
+    if (!mounted) return;
     setState(() {
       _error = msg;
       _isLoading = false;
@@ -554,7 +590,9 @@ class _AkkountPageState extends State<AkkountPage>
                         ),
                       ),
                       child: Text(
-                        _profile!.isActive ? '⛔  Nofaol' : '✅  Faol talaba',
+                        _profile!.isActive
+                            ? '✅  Faol talaba'
+                            : '⛔  Nofaol',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,

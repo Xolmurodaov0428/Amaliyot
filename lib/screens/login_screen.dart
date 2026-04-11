@@ -13,19 +13,16 @@ class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // ── Controllers & services ─────────────────────────────────────────────────
   final TextEditingController _loginCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final FocusNode _loginFocus = FocusNode();
   final FocusNode _passFocus = FocusNode();
   final ApiService _api = ApiService();
 
-  // ── State ──────────────────────────────────────────────────────────────────
   bool _isLoading = false;
   bool _obscurePass = true;
   String _errorMessage = '';
 
-  // ── Animation controllers ──────────────────────────────────────────────────
   late final AnimationController _entryCtrl;
   late final AnimationController _shakeCtrl;
   late final Animation<double> _fadeAnim;
@@ -42,20 +39,29 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 900),
     );
 
-    _fadeAnim = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
+    _fadeAnim = CurvedAnimation(
+      parent: _entryCtrl,
+      curve: Curves.easeOut,
+    );
 
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.18),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic),
+      CurvedAnimation(
+        parent: _entryCtrl,
+        curve: Curves.easeOutCubic,
+      ),
     );
 
     _scaleAnim = Tween<double>(
       begin: 0.92,
       end: 1.0,
     ).animate(
-      CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic),
+      CurvedAnimation(
+        parent: _entryCtrl,
+        curve: Curves.easeOutCubic,
+      ),
     );
 
     _shakeCtrl = AnimationController(
@@ -64,13 +70,31 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     _shakeAnim = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -10.0, end: 10.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 10.0, end: -8.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 8.0, end: 0.0), weight: 1),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: -10.0),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: -10.0, end: 10.0),
+        weight: 2,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 10.0, end: -8.0),
+        weight: 2,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: -8.0, end: 8.0),
+        weight: 2,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 8.0, end: 0.0),
+        weight: 1,
+      ),
     ]).animate(
-      CurvedAnimation(parent: _shakeCtrl, curve: Curves.easeInOut),
+      CurvedAnimation(
+        parent: _shakeCtrl,
+        curve: Curves.easeInOut,
+      ),
     );
 
     _entryCtrl.forward();
@@ -87,18 +111,22 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // ── Login logic ────────────────────────────────────────────────────────────
   Future<void> _handleLogin() async {
     if (_isLoading) return;
 
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) {
-      setState(() => _errorMessage = 'Iltimos, barcha maydonlarni to‘ldiring.');
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Iltimos, barcha maydonlarni to‘ldiring.';
+      });
       _shakeCtrl.forward(from: 0);
       return;
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -115,7 +143,8 @@ class _LoginScreenState extends State<LoginScreen>
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, animation, secondaryAnimation) => const HomePage(),
+          pageBuilder: (_, animation, secondaryAnimation) =>
+          const HomePage(),
           transitionsBuilder: (_, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: animation,
@@ -134,22 +163,25 @@ class _LoginScreenState extends State<LoginScreen>
     } catch (_) {
       _showError('Kutilmagan xato yuz berdi.');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   void _showError(String message) {
     if (!mounted) return;
-    setState(() => _errorMessage = message);
+    setState(() {
+      _errorMessage = message;
+    });
     _shakeCtrl.forward(from: 0);
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final availableHeight = size.height - MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1628),
@@ -162,14 +194,14 @@ class _LoginScreenState extends State<LoginScreen>
               onTap: () => FocusScope.of(context).unfocus(),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                child: SizedBox(
-                  height: size.height - MediaQuery.of(context).padding.top,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: availableHeight),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Spacer(flex: 2),
+                        const SizedBox(height: 24),
                         FadeTransition(
                           opacity: _fadeAnim,
                           child: SlideTransition(
@@ -187,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
-                        const Spacer(flex: 3),
+                        const SizedBox(height: 32),
                         FadeTransition(
                           opacity: _fadeAnim,
                           child: _buildFooter(),
@@ -205,7 +237,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Background ─────────────────────────────────────────────────────────────
   Widget _buildBackground(Size size) {
     return Stack(
       children: [
@@ -253,7 +284,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Glass card ─────────────────────────────────────────────────────────────
   Widget _buildCard() {
     return Container(
       decoration: BoxDecoration(
@@ -314,7 +344,12 @@ class _LoginScreenState extends State<LoginScreen>
               icon: Icons.lock_outline_rounded,
               obscure: _obscurePass,
               suffixIcon: IconButton(
-                onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                onPressed: () {
+                  if (!mounted) return;
+                  setState(() {
+                    _obscurePass = !_obscurePass;
+                  });
+                },
                 icon: Icon(
                   _obscurePass
                       ? Icons.visibility_outlined
@@ -342,7 +377,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Logo ───────────────────────────────────────────────────────────────────
   Widget _buildLogo() {
     return Row(
       children: [
@@ -397,7 +431,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Heading ────────────────────────────────────────────────────────────────
   Widget _buildHeading() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,7 +457,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Input field ────────────────────────────────────────────────────────────
   Widget _buildField({
     required TextEditingController controller,
     required FocusNode focusNode,
@@ -515,7 +547,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Error banner ───────────────────────────────────────────────────────────
   Widget _buildError() {
     return AnimatedSize(
       duration: const Duration(milliseconds: 250),
@@ -523,7 +554,10 @@ class _LoginScreenState extends State<LoginScreen>
           ? const SizedBox.shrink()
           : Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
           color: Colors.redAccent.withOpacity(0.12),
           borderRadius: BorderRadius.circular(12),
@@ -554,7 +588,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Login button ───────────────────────────────────────────────────────────
   Widget _buildLoginButton() {
     return SizedBox(
       width: double.infinity,
@@ -590,7 +623,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Footer ─────────────────────────────────────────────────────────────────
   Widget _buildFooter() {
     return Text(
       '© 2026 BSTU Amaliyot  •  Barcha huquqlar himoyalangan',
@@ -604,9 +636,6 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Gradient button with press-scale animation
-// ─────────────────────────────────────────────────────────────────────────────
 class _GradientButton extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
@@ -699,9 +728,6 @@ class _GradientButtonState extends State<_GradientButton>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dot-grid background painter
-// ─────────────────────────────────────────────────────────────────────────────
 class _DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
