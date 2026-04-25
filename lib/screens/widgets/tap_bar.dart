@@ -1,6 +1,6 @@
 import 'package:student_amaliyot_app/screens/widgets/faoliyat/faoliyat_screen.dart';
 import 'package:student_amaliyot_app/widgets/davomat_page.dart';
-import 'package:student_amaliyot_app/widgets/home_page.dart';
+import 'package:student_amaliyot_app/widgets/dashboard_page.dart';
 import 'package:student_amaliyot_app/widgets/topshiriq_page.dart';
 import '../../utils/tools/file_importers.dart';
 import '../sozlamalar_screen.dart';
@@ -23,7 +23,7 @@ class TapBarPage extends StatelessWidget {
             body: TabBarView(
               physics: const BouncingScrollPhysics(),
               children: [
-                HomePage1(), // <-- SHU YERDA SCROLL YO'Q BO'LSIN!
+                StudentPortalPage(token: '',), // <-- SHU YERDA SCROLL YO'Q BO'LSIN!
 
                 // Center(child: Text("📋 Topshiriqlar", style: TextStyle(fontSize: 20))),
 

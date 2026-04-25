@@ -54,7 +54,7 @@ class AttendanceRecord {
     return AttendanceRecord(
       id: int.tryParse(j['id']?.toString() ?? '0') ?? 0,
       studentId: int.tryParse(j['student_id']?.toString() ?? '0') ?? 0,
-      date: DateTime.tryParse(j['date']?.toString() ?? '') ?? DateTime.now(),
+      date: (DateTime.tryParse(j['date']?.toString() ?? '') ?? DateTime.now()).toLocal(),
       session: j['session']?.toString() ?? 'session_1',
       status: j['status']?.toString() ?? 'absent',
       checkInTime: j['check_in_time']?.toString(),
@@ -493,9 +493,11 @@ class _DavomatPageState extends State<DavomatPage> {
 
         final Map<String, List<AttendanceRecord>> grouped = {};
         for (final r in records) {
-          final key = '${r.date.year.toString().padLeft(4, '0')}-'
-              '${r.date.month.toString().padLeft(2, '0')}-'
-              '${r.date.day.toString().padLeft(2, '0')}';
+          // Guruhlash uchun har doim mahalliy sanadan foydalanamiz
+          final d = r.date.toLocal();
+          final key = '${d.year.toString().padLeft(4, '0')}-'
+              '${d.month.toString().padLeft(2, '0')}-'
+              '${d.day.toString().padLeft(2, '0')}';
           grouped.putIfAbsent(key, () => []).add(r);
         }
 
@@ -539,6 +541,16 @@ class _DavomatPageState extends State<DavomatPage> {
 
   // POST API
   Future<void> _save() async {
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    if (selectedDate.isBefore(today)) {
+      _snack('O‘tgan kunlar uchun davomat belgilab bo‘lmaydi!', Colors.red);
+      return;
+    }
     if (_selectedCount == 0) {
       _snack('Kamida bitta seansni belgilang!', Colors.red);
       return;

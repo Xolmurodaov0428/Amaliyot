@@ -10,7 +10,6 @@ import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 // ─────────────────────────────────────────────
 // ENUM
 // ─────────────────────────────────────────────

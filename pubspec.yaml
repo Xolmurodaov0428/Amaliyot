@@ -42,7 +42,8 @@ dependencies:
   flutter_svg: ^2.0.10+1
   url_launcher: ^6.2.5
 
-
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.2.0
 
 
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../screens/home_screen.dart';
-import '../../screens/login_screen.dart'; // misol uchun
+import '../../screens/login_screen.dart';
+import '../../widgets/dashboard_page.dart'; // misol uchun
 
 class RouteName {
   static const String home = '/home';
@@ -12,8 +13,8 @@ class AppRouter {
     switch (settings.name) {
       case RouteName.login:
         return MaterialPageRoute(builder: (_) => const
-        // HomePage()
-        LoginScreen()
+        HomePage()
+        // LoginScreen()
         );case RouteName.home:
         return MaterialPageRoute(builder: (_) => const HomePage());
 
