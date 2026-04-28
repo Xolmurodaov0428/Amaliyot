@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_amaliyot_app/app/app.dart';
 import 'package:student_amaliyot_app/screens/profile_screen.dart';
+import 'package:student_amaliyot_app/screens/setting/about_app_screen.dart';
+import 'package:student_amaliyot_app/screens/setting/connect_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/language_screen.dart';
+import 'package:student_amaliyot_app/screens/setting/security_screen.dart';
 
 import 'login_screen.dart';
 
@@ -94,6 +97,12 @@ class _SettingPageState extends State<SettingPage> {
                 subtitle: 'Parol va autentifikatsiya',
                 onTap: () {
                   // SecurityScreen ochiladi
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SecurityScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 20),
@@ -117,6 +126,12 @@ class _SettingPageState extends State<SettingPage> {
                 subtitle: 'Push va email xabarnomalar',
                 onTap: () {
                   // NotificationsScreen ochiladi
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ContactScreen(),
+                    ),
+                  );
                 },
               ),
               _SettingTile(
@@ -127,6 +142,12 @@ class _SettingPageState extends State<SettingPage> {
                 subtitle: 'Mavzu va rang sxemasi',
                 onTap: () {
                   // AppearanceScreen ochiladi
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ContactScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 20),
@@ -140,6 +161,12 @@ class _SettingPageState extends State<SettingPage> {
                 subtitle: 'Savollar va muammolar bo\'yicha yordam',
                 onTap: () {
                   // Bog'lanish sahifasi yoki dialog
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ContactScreen(),
+                    ),
+                  );
                 },
               ),
               _SettingTile(
@@ -150,6 +177,12 @@ class _SettingPageState extends State<SettingPage> {
                 subtitle: 'Versiya, litsenziya va aloqa',
                 onTap: () {
                   // AboutAppScreen ochiladi
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AboutAppScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 32),

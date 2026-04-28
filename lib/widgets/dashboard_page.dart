@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../screens/profile_screen.dart';
 // ============= COLOR CONSTANTS =============
 class AppColors {
   static const Color primaryBlue = Color(0xFF0066cc);
@@ -34,17 +38,21 @@ class TaskModel {
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
-    final status = (json['status'] ?? '').toString();
+    final due = json['due_date'];
+
+    String formattedDate = '📅 Sana yo‘q';
+
+    if (due != null) {
+      final d = DateTime.parse(due.toString());
+      formattedDate =
+      '📅 ${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+    }
 
     return TaskModel(
       title: (json['title'] ?? 'Nomsiz topshiriq').toString(),
-      status: (json['status_label'] ?? status).toString(),
-      date: json['due_date'] != null
-          ? '📅 Muddati: ${json['due_date']}'
-          : json['approved_date'] != null
-          ? '📅 Tasdiqlanish: ${json['approved_date']}'
-          : '📅 Sana kiritilmagan',
-      isPending: status == 'pending',
+      status: 'Yangi',
+      date: formattedDate,
+      isPending: true,
     );
   }
 }
@@ -63,11 +71,9 @@ class StatisticModel {
 
 // ============= MAIN PAGE =============
 class StudentPortalPage extends StatefulWidget {
-  final String token;
 
   const StudentPortalPage({
     Key? key,
-    required this.token,
   }) : super(key: key);
 
   @override
@@ -83,13 +89,101 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   bool isLoading = true;
   String? errorMessage;
   Map<String, dynamic>? dashboard;
+  Uint8List? avatarBytes;
+
+
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _loadAvatar(); // 🔥 SHUNI QO‘SH
     fetchDashboard();
   }
+
+  Future<void> _loadAvatar() async {
+    final bytes = await AvatarService.loadImageBytes();
+    if (!mounted) return;
+    setState(() => avatarBytes = bytes);
+  }
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  Future<void> _openOrganizationLocation() async {
+    final organization = map('organization');
+
+    final latRaw = organization['latitude'];
+    final lonRaw = organization['longitude'];
+
+    final lat = double.tryParse(latRaw?.toString() ?? '');
+    final lon = double.tryParse(lonRaw?.toString() ?? '');
+
+    if (lat == null || lon == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lokatsiya hali kiritilmagan'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
+    );
+
+    final opened = await launchUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google Maps ochilmadi'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+  DateTime? _parseDate(String? date) {
+    if (date == null || date.isEmpty) return null;
+    return DateTime.tryParse(date);
+  }
+
+  String _dateKey(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _openInternshipCalendar() async {
+    final internship = map('internship');
+
+    final activeDaysRaw = internship['active_days'];
+    final activeDays = <String>{};
+
+    if (activeDaysRaw is List) {
+      activeDays.addAll(activeDaysRaw.map((e) => e.toString()));
+    }
+
+    final startDate = _parseDate(internship['start_date']?.toString()) ??
+        DateTime.now();
+
+    await showDialog(
+      context: context,
+      builder: (_) {
+        return InternshipCalendarDialog(
+          initialDate: startDate,
+          activeDays: activeDays,
+        );
+      },
+    );
+  }
+
+
 
   void _initializeAnimations() {
     _headerController = AnimationController(
@@ -125,11 +219,21 @@ class _StudentPortalPageState extends State<StudentPortalPage>
     });
 
     try {
+      final token = await _getToken();
+
+      if (token == null || token.isEmpty) {
+        setState(() {
+          errorMessage = 'Token topilmadi. Qayta login qiling.';
+          isLoading = false;
+        });
+        return;
+      }
+
       final response = await http.get(
         Uri.parse('https://shaxa.mycoder.uz/api/student/dashboard-student'),
         headers: {
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -138,6 +242,11 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       if (response.statusCode == 200 && body['success'] == true) {
         setState(() {
           dashboard = Map<String, dynamic>.from(body['data']);
+          isLoading = false;
+        });
+      } else if (response.statusCode == 401) {
+        setState(() {
+          errorMessage = 'Sessiya tugagan. Qayta login qiling.';
           isLoading = false;
         });
       } else {
@@ -154,7 +263,6 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       });
     }
   }
-
   @override
   void dispose() {
     _headerController.dispose();
@@ -176,7 +284,7 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   }
 
   List<TaskModel> get tasks {
-    final raw = dashboard?['recent_tasks'];
+    final raw = dashboard?['tasks']; // 🔥 FIX
 
     if (raw is List) {
       return raw
@@ -187,7 +295,6 @@ class _StudentPortalPageState extends State<StudentPortalPage>
 
     return [];
   }
-
   List<StatisticModel> get statistics {
     final stats = map('attendance_stats');
 
@@ -343,12 +450,20 @@ class _StudentPortalPageState extends State<StudentPortalPage>
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(100),
+              image: avatarBytes != null
+                  ? DecorationImage(
+                image: MemoryImage(avatarBytes!),
+                fit: BoxFit.cover,
+              )
+                  : null,
             ),
-            child: const Center(
+            child: avatarBytes == null
+                ? const Center(
               child: Text('👤', style: TextStyle(fontSize: 32)),
-            ),
+            )
+                : null,
           ),
-          const SizedBox(width: 25),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,17 +477,28 @@ class _StudentPortalPageState extends State<StudentPortalPage>
                     letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: [
                     _buildMetaItem('🎓 Guruh:', value(group['name'])),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
                     _buildMetaItem('👨‍🏫 Rahbar:', value(supervisor['name'])),
-                    _buildMetaItem(
-                      '🏢 Tashkilot Rahbari:',
-                      value(leader['name']),
-                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildMetaItem('🏢 Tashkilot Rahbari:', value(leader['name']),),
                   ],
                 ),
               ],
@@ -426,10 +552,18 @@ class _StudentPortalPageState extends State<StudentPortalPage>
     final activeDays = internship['active_days'];
     String firstDay = value(internship['start_date']);
     String lastDay = value(internship['end_date']);
+    final today = DateTime.now().toString().substring(0, 10);
 
-    if (activeDays is List && activeDays.isNotEmpty) {
-      firstDay = activeDays.first.toString();
-      lastDay = activeDays.last.toString();
+    String trailingIcon;
+
+    if (activeDays == null) {
+      trailingIcon = '📅';
+    } else {
+      final today = DateTime.now().toString().substring(0, 10);
+
+      final isTodayActive = (activeDays as List).contains(today);
+
+      trailingIcon = isTodayActive ? '✔️' : '❌';
     }
 
     return Column(
@@ -437,10 +571,11 @@ class _StudentPortalPageState extends State<StudentPortalPage>
         _buildStatusCard(
           icon: '📅',
           title: 'Amaliyot muddati',
-          mainText: '$firstDay → $lastDay',
-          trailing: '✔️',
+          mainText: '$firstDay dan $lastDay gacha.',
+          trailing: trailingIcon,
           subText: 'Jami kunlar: ${value(internship['active_days_count'], '0')}',
           iconBg: AppColors.lightBlue,
+          onTap: _openInternshipCalendar,
         ),
         const SizedBox(height: 20),
         _buildStatusCard(
@@ -449,8 +584,12 @@ class _StudentPortalPageState extends State<StudentPortalPage>
           mainText: value(organization['name'], 'Tashkilot kiritilmagan'),
           subText: organization['latitude'] == null || organization['longitude'] == null
               ? 'Lokatsiya hali kiritilmagan'
-              : 'Lat: ${organization['latitude']}, Lon: ${organization['longitude']}',
+              : 'Xaritada ko‘rish uchun bosing',
           iconBg: AppColors.lightBlue,
+          trailing: organization['latitude'] == null || organization['longitude'] == null
+              ? '❌'
+              : '📍',
+          onTap: _openOrganizationLocation,
         ),
       ],
     );
@@ -463,20 +602,22 @@ class _StudentPortalPageState extends State<StudentPortalPage>
     required String subText,
     required Color iconBg,
     String? trailing,
+    VoidCallback? onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$title - $mainText'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: AppColors.primaryBlue,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
+        onTap: onTap ??
+                () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$title - $mainText'),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: AppColors.primaryBlue,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
@@ -616,7 +757,7 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   }
 
   Widget _buildTasksSection() {
-    final taskList = tasks;
+    final taskList = tasks.take(3).toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -805,6 +946,255 @@ class _StudentPortalPageState extends State<StudentPortalPage>
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+class InternshipCalendarDialog extends StatefulWidget {
+  final DateTime initialDate;
+  final Set<String> activeDays;
+
+  const InternshipCalendarDialog({
+    super.key,
+    required this.initialDate,
+    required this.activeDays,
+  });
+
+  @override
+  State<InternshipCalendarDialog> createState() =>
+      _InternshipCalendarDialogState();
+}
+
+class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
+  late DateTime visibleMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    visibleMonth = DateTime(widget.initialDate.year, widget.initialDate.month);
+  }
+
+  String _key(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Yanvar',
+      'Fevral',
+      'Mart',
+      'Aprel',
+      'May',
+      'Iyun',
+      'Iyul',
+      'Avgust',
+      'Sentabr',
+      'Oktabr',
+      'Noyabr',
+      'Dekabr',
+    ];
+    return months[month - 1];
+  }
+
+  void _previousMonth() {
+    setState(() {
+      visibleMonth = DateTime(visibleMonth.year, visibleMonth.month - 1);
+    });
+  }
+
+  void _nextMonth() {
+    setState(() {
+      visibleMonth = DateTime(visibleMonth.year, visibleMonth.month + 1);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final firstDay = DateTime(visibleMonth.year, visibleMonth.month, 1);
+    final lastDay = DateTime(visibleMonth.year, visibleMonth.month + 1, 0);
+
+    final startWeekday = firstDay.weekday % 7; // Sunday = 0
+    final totalCells = startWeekday + lastDay.day;
+    final rowCount = (totalCells / 7).ceil();
+    final cellCount = rowCount * 7;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.all(18),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Amaliyot kunlari',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              children: [
+                Text(
+                  '${_monthName(visibleMonth.month)} ${visibleMonth.year}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: _previousMonth,
+                  icon: const Icon(Icons.chevron_left_rounded),
+                ),
+                IconButton(
+                  onPressed: _nextMonth,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            const Row(
+              children: [
+                _WeekDayText('Y'),
+                _WeekDayText('D'),
+                _WeekDayText('S'),
+                _WeekDayText('Ch'),
+                _WeekDayText('P'),
+                _WeekDayText('J'),
+                _WeekDayText('Sh'),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: cellCount,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+              ),
+              itemBuilder: (context, index) {
+                final dayNumber = index - startWeekday + 1;
+
+                if (dayNumber < 1 || dayNumber > lastDay.day) {
+                  return const SizedBox();
+                }
+
+                final date = DateTime(
+                  visibleMonth.year,
+                  visibleMonth.month,
+                  dayNumber,
+                );
+
+                final isActive = widget.activeDays.contains(_key(date));
+                final isToday = _key(date) == _key(DateTime.now());
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.successGreen
+                        : isToday
+                        ? AppColors.lightBlue
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(100),
+                    border: isToday && !isActive
+                        ? Border.all(color: AppColors.primaryBlue, width: 1.5)
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$dayNumber',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight:
+                        isActive || isToday ? FontWeight.w800 : FontWeight.w500,
+                        color: isActive
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 18),
+
+            Row(
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.successGreen,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Amaliyot kuni',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeekDayText extends StatelessWidget {
+  final String text;
+
+  const _WeekDayText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Center(
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
       ),
     );
   }

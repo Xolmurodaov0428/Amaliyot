@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
   bool _obscurePass = true;
   String _errorMessage = '';
+  bool _rememberMe = false;
 
   late final AnimationController _entryCtrl;
   late final AnimationController _shakeCtrl;
@@ -33,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-
     _entryCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -98,6 +99,9 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     _entryCtrl.forward();
+    // 🔥 OXIRIDA CHAQIRILADI
+    _entryCtrl.forward();
+    _loadSavedCredentials();
   }
 
   @override
@@ -110,6 +114,24 @@ class _LoginScreenState extends State<LoginScreen>
     _passFocus.dispose();
     super.dispose();
   }
+
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final savedLogin = prefs.getString('login');
+    final savedPassword = prefs.getString('password');
+    final remember = prefs.getBool('remember_me') ?? false;
+
+    if (remember) {
+      setState(() {
+        _loginCtrl.text = savedLogin ?? '';
+        _passwordCtrl.text = savedPassword ?? '';
+        _rememberMe = true;
+      });
+    }
+  }
+
 
   Future<void> _handleLogin() async {
     if (_isLoading) return;
@@ -137,7 +159,17 @@ class _LoginScreenState extends State<LoginScreen>
         _loginCtrl.text.trim(),
         _passwordCtrl.text.trim(),
       );
+      final prefs = await SharedPreferences.getInstance();
 
+      if (_rememberMe) {
+        await prefs.setString('login', _loginCtrl.text.trim());
+        await prefs.setString('password', _passwordCtrl.text.trim());
+        await prefs.setBool('remember_me', true);
+      } else {
+        await prefs.remove('login');
+        await prefs.remove('password');
+        await prefs.setBool('remember_me', false);
+      }
       if (!mounted) return;
 
       Navigator.pushReplacement(
@@ -170,6 +202,24 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+
+
+
+  // Future<void> _loadSavedCredentials() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //
+  //   final savedLogin = prefs.getString('login');
+  //   final savedPassword = prefs.getString('password');
+  //   final remember = prefs.getBool('remember_me') ?? false;
+  //
+  //   if (remember) {
+  //     setState(() {
+  //       _loginCtrl.text = savedLogin ?? '';
+  //       _passwordCtrl.text = savedPassword ?? '';
+  //       _rememberMe = true;
+  //     });
+  //   }
+  // }
   void _showError(String message) {
     if (!mounted) return;
     setState(() {
@@ -366,6 +416,25 @@ class _LoginScreenState extends State<LoginScreen>
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                  activeColor: Colors.teal,
+                ),
+                const Text(
+                  "Eslab qolish",
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             _buildError(),

@@ -23,7 +23,7 @@ class TapBarPage extends StatelessWidget {
             body: TabBarView(
               physics: const BouncingScrollPhysics(),
               children: [
-                StudentPortalPage(token: '',), // <-- SHU YERDA SCROLL YO'Q BO'LSIN!
+                StudentPortalPage(), // <-- SHU YERDA SCROLL YO'Q BO'LSIN!
 
                 // Center(child: Text("📋 Topshiriqlar", style: TextStyle(fontSize: 20))),
 

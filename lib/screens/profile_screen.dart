@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_amaliyot_app/services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthService
@@ -123,7 +125,32 @@ class AuthService {
     return prefs.getString(_keyToken);
   }
 }
+class AvatarService {
+  static const String _key = 'student_avatar_base64';
 
+  static Future<void> saveImageBytes(Uint8List bytes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, base64Encode(bytes));
+  }
+
+  static Future<Uint8List?> loadImageBytes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final base64Image = prefs.getString(_key);
+
+    if (base64Image == null || base64Image.isEmpty) return null;
+
+    try {
+      return base64Decode(base64Image);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> clearImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthResult
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,6 +356,9 @@ class _AkkountPageState extends State<AkkountPage>
   bool _isLoading = true;
   String _error = '';
 
+  Uint8List? _avatarBytes;
+  bool _isPickingAvatar = false;
+
   late final AnimationController _shimmerCtrl;
   late final Animation<double> _shimmerAnim;
 
@@ -349,6 +379,7 @@ class _AkkountPageState extends State<AkkountPage>
   @override
   void initState() {
     super.initState();
+
     _shimmerCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -358,6 +389,7 @@ class _AkkountPageState extends State<AkkountPage>
       CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOutSine),
     );
 
+    _loadAvatar(); // 🔥 SHUNI QO‘SH
     _loadProfile();
   }
 
@@ -366,6 +398,57 @@ class _AkkountPageState extends State<AkkountPage>
     _shimmerCtrl.dispose();
     super.dispose();
   }
+  Future<void> _loadAvatar() async {
+    final bytes = await AvatarService.loadImageBytes();
+    if (!mounted) return;
+
+    setState(() {
+      _avatarBytes = bytes;
+    });
+  }
+
+  Future<void> _pickImage() async {
+    if (_isPickingAvatar) return;
+
+    setState(() => _isPickingAvatar = true);
+
+    try {
+      debugPrint('CAMERA CLICKED');
+
+      final picker = ImagePicker();
+
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 65,
+        maxWidth: 600,
+        maxHeight: 600,
+      );
+
+      if (picked == null) {
+        debugPrint('Rasm tanlanmadi');
+        return;
+      }
+
+      final bytes = await picked.readAsBytes();
+
+      await AvatarService.saveImageBytes(bytes);
+
+      if (!mounted) return;
+
+      setState(() {
+        _avatarBytes = bytes;
+      });
+
+      debugPrint('Avatar saqlandi: ${bytes.length} bytes');
+    } catch (e) {
+      debugPrint('Avatar tanlashda xato: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingAvatar = false);
+      }
+    }
+  }
+
 
   Future<void> _loadProfile() async {
     if (!mounted) return;
@@ -520,52 +603,10 @@ class _AkkountPageState extends State<AkkountPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 12),
-                    Stack(
-                      children: [
-                        Hero(
-                          tag: 'profile_avatar',
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 14,
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 42,
-                              backgroundColor: Colors.teal.shade800,
-                              child: Text(
-                                _profile!.initials,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 3,
-                          right: 3,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: _profile!.isActive
-                                  ? Colors.greenAccent.shade400
-                                  : Colors.grey,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+
+                    // ✅ Rasm + camera icon chiqadigan yangi avatar
+                    _profileAvatar(),
+
                     const SizedBox(height: 12),
                     Text(
                       _profile!.fullName,
@@ -617,7 +658,97 @@ class _AkkountPageState extends State<AkkountPage>
       color: color,
     ),
   );
+  Widget _profileAvatar() {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Hero(
+          tag: 'profile_avatar',
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 14,
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 42,
+              backgroundColor: Colors.teal.shade800,
+              backgroundImage:
+              _avatarBytes != null ? MemoryImage(_avatarBytes!) : null,
+              child: _avatarBytes == null
+                  ? Text(
+                _profile!.initials,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+                  : null,
+            ),
+          ),
+        ),
 
+        Positioned(
+          bottom: -2,
+          right: -2,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: () {
+                debugPrint('CAMERA CLICKED');
+                _pickImage();
+              },
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.teal,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: _isPickingAvatar
+                    ? const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                    : const Icon(
+                  Icons.camera_alt_rounded,
+                  size: 17,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Positioned(
+        //   bottom: 3,
+        //   left: 3,
+        //   child: Container(
+        //     width: 16,
+        //     height: 16,
+        //     decoration: BoxDecoration(
+        //       color: _profile!.isActive
+        //           ? Colors.greenAccent.shade400
+        //           : Colors.grey,
+        //       shape: BoxShape.circle,
+        //       border: Border.all(color: Colors.white, width: 2),
+        //     ),
+        //   ),
+        // ),
+      ],
+    );
+  }
   Widget _buildContent() {
     final p = _profile!;
     return Padding(
@@ -633,11 +764,11 @@ class _AkkountPageState extends State<AkkountPage>
                 'Username',
                 p.username,
               ),
-              _InfoItem(
-                Icons.calendar_today_outlined,
-                "Ro'yxatdan o'tgan",
-                p.formattedDate,
-              ),
+              // _InfoItem(
+              //   Icons.calendar_today_outlined,
+              //   "Ro'yxatdan o'tgan",
+              //   p.formattedDate,
+              // ),
             ],
           ),
           const SizedBox(height: 20),

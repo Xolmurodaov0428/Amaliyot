@@ -6,10 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_file_downloader/flutter_file_downloader.dart';
-import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 // ─────────────────────────────────────────────
 // ENUM
 // ─────────────────────────────────────────────
@@ -37,7 +37,7 @@ enum SubmissionStatus {
       case SubmissionStatus.pending:
         return 'Kutilmoqda';
       case SubmissionStatus.unknown:
-        return 'Noma\'lum';
+        return "Noma'lum";
     }
   }
 
@@ -91,11 +91,11 @@ class AppConstants {
 // ─────────────────────────────────────────────
 
 class AppColors {
-  static const darkBg      = Color(0xFF07111D);
-  static const darkSurface = Color(0xFF0F2336);
-  static const darkCard    = Color(0xFF091825);
-  static const darkBorder  = Color(0xFF1A3047);
-  static const darkSubtext = Color(0xFF4E7A9B);
+  static const darkBg      = Color(0xFFF8FAFC);
+  static const darkSurface = Color(0xFFFFFFFF);
+  static const darkCard    = Color(0xFFF1F5F9);
+  static const darkBorder  = Color(0xFFE2E8F0);
+  static const darkSubtext = Color(0xFF64748B);
   static const accent      = Color(0xFF2D7DD2);
   static const accentLight = Color(0xFF5B9FE8);
   static const pageBg      = Color(0xFFF1F5F9);
@@ -117,57 +117,24 @@ class TopshiriqlarPage extends StatefulWidget {
 }
 
 class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
-
-  Future<String?> downloadAndCacheFile(String url) async {
-    try {
-      if (url.trim().isEmpty) {
-        _showSnack('Fayl manzili topilmadi.', Colors.red);
-        return null;
-      }
-
-      _showSnack('Fayl tekshirilmoqda...', AppColors.accent);
-
-      final dir = await getApplicationDocumentsDirectory();
-      final fileName = Uri.parse(url).pathSegments.isNotEmpty
-          ? Uri.parse(url).pathSegments.last
-          : 'file';
-      final filePath = '${dir.path}/$fileName';
-      final file = File(filePath);
-
-      if (await file.exists()) {
-        _showSnack('Fayl oldin yuklangan. Ochilmoqda...', AppColors.green);
-        return filePath;
-      }
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {'Accept': '*/*'},
-      );
-
-      if (response.statusCode == 200) {
-        await file.writeAsBytes(response.bodyBytes, flush: true);
-        _showSnack('Fayl yuklab olindi ✅', AppColors.green);
-        return filePath;
-      }
-
-      _showSnack(
-        'Yuklab bo‘lmadi. Status: ${response.statusCode}',
-        Colors.red,
-      );
-      return null;
-    } catch (e) {
-      _showSnack('Yuklashda xato: $e', Colors.red);
-      return null;
-    }
-  }
-
   bool _isLoading = true;
   bool _isSubmitting = false;
   String _error = '';
   List<StudentTask> _tasks = [];
-  String? _downloadedTaskFilePath;
-  String? _downloadedSubmissionPath;
   final http.Client _httpClient = http.Client();
+
+
+  bool _isTaskExpiredByDate(String? dueDate) {
+    if (dueDate == null || dueDate.trim().isEmpty) return false;
+
+    try {
+      final due = DateTime.parse(dueDate.replaceFirst(' ', 'T'));
+      return DateTime.now().isAfter(due);
+    } catch (_) {
+      return false;
+    }
+  }
+
 
   @override
   void initState() {
@@ -181,11 +148,14 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     super.dispose();
   }
 
+  // ── Token ──────────────────────────────────
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(AppConstants.tokenKey);
   }
+
+  // ── Permission ─────────────────────────────
 
   Future<bool> _requestDownloadPermission() async {
     if (!mounted) return false;
@@ -203,6 +173,8 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     return true;
   }
 
+  // ── URL helpers ────────────────────────────
+
   String? _buildFileUrl(String? filePath) {
     if (filePath == null || filePath.trim().isEmpty) return null;
     final path = filePath.trim();
@@ -214,6 +186,12 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     final parts = path.replaceAll('\\', '/').split('/');
     return parts.isNotEmpty ? parts.last : 'file';
   }
+
+  // ── Download file ──────────────────────────
+  //
+  // Returns the local path on success, null on failure.
+  // Uses flutter_file_downloader under the hood.
+
   Future<String?> _downloadFile(String? filePath) async {
     final url = _buildFileUrl(filePath);
     if (url == null) {
@@ -238,9 +216,9 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
         downloadDestination: DownloadDestinations.appFiles,
         notificationType: NotificationType.all,
         onProgress: (name, progress) {
-          debugPrint('Downloading $name : ${progress.toStringAsFixed(0)}%');
+          debugPrint('Downloading $name: ${progress.toStringAsFixed(0)}%');
         },
-        onDownloadCompleted: (path) async {
+        onDownloadCompleted: (path) {
           _showSnack('Fayl yuklab olindi ✅', AppColors.green);
           completer.complete(path);
         },
@@ -256,52 +234,33 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
       return null;
     }
   }
-  // Future<void> _downloadFile(String? filePath) async {
-  //   final url = _buildFileUrl(filePath);
-  //   if (url == null) {
-  //     _showSnack('Fayl manzili topilmadi.', Colors.red);
-  //     return;
-  //   }
-  //   final allowed = await _requestDownloadPermission();
-  //   if (!allowed) {
-  //     _showSnack('Yuklab olish uchun ruxsat kerak.', Colors.red);
-  //     return;
-  //   }
-  //   try {
-  //     _showSnack('Fayl yuklab olinmoqda...', AppColors.accent);
-  //     FileDownloader.downloadFile(
-  //       url: url,
-  //       name: _extractFileName(filePath ?? url),
-  //       downloadDestination: DownloadDestinations.appFiles,
-  //       notificationType: NotificationType.all,
-  //       onProgress: (name, progress) =>
-  //           debugPrint('Downloading $name : ${progress.toStringAsFixed(0)}%'),
-  //       onDownloadCompleted: (path) async {
-  //         _showSnack('Fayl yuklab olindi ✅', AppColors.green);
-  //         if (path.isNotEmpty) await OpenFilex.open(path);
-  //       },
-  //       onDownloadError: (err) =>
-  //           _showSnack('Yuklab olishda xato: $err', Colors.red),
-  //     );
-  //   } catch (e) {
-  //     _showSnack('Yuklab olishda xato: $e', Colors.red);
-  //   }
-  // }
+
+  // ── Load tasks ─────────────────────────────
 
   Future<void> _loadTasks() async {
     if (!mounted) return;
-    setState(() { _isLoading = true; _error = ''; });
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
     try {
       final token = await _getToken();
       if (token == null || token.isEmpty) {
         _setError('Token topilmadi. Qayta login qiling.');
         return;
       }
+
       final response = await _httpClient.get(
         Uri.parse('${AppConstants.baseUrl}/student/tasks'),
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
+
       if (!mounted) return;
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final data = body['data'] as List<dynamic>? ?? [];
@@ -325,22 +284,28 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
 
   void _setError(String message) {
     if (!mounted) return;
-    setState(() { _error = message; _isLoading = false; });
+    setState(() {
+      _error = message;
+      _isLoading = false;
+    });
   }
+
+  // ── Pick file ──────────────────────────────
+
   Future<PlatformFile?> _pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-        withData: true, // MUHIM
+        withData: true, // bytes kerak, withData = true
       );
 
       if (result == null || result.files.isEmpty) return null;
 
       final file = result.files.first;
 
-      if (file.size <= 0) {
-        _showSnack('Fayl bo‘sh yoki noto‘g‘ri.', Colors.red);
+      if (file.bytes == null || file.bytes!.isEmpty) {
+        _showSnack("Fayl bo'sh yoki noto'g'ri.", Colors.red);
         return null;
       }
 
@@ -356,35 +321,8 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
       return null;
     }
   }
-  // Future<PlatformFile?> _pickFile() async {
-  //   try {
-  //     final result = await FilePicker.platform.pickFiles(
-  //       type: FileType.custom,
-  //       allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-  //       withData: false,
-  //       withReadStream: false,
-  //     );
-  //     if (result == null || result.files.isEmpty) return null;
-  //     final file = result.files.first;
-  //     if (file.path == null || file.path!.isEmpty) {
-  //       _showSnack('Fayl yo\'li topilmadi.', Colors.red);
-  //       return null;
-  //     }
-  //     if (file.size <= 0) {
-  //       _showSnack('Fayl bo\'sh yoki noto\'g\'ri.', Colors.red);
-  //       return null;
-  //     }
-  //     if (file.size > AppConstants.maxFileSizeBytes) {
-  //       final sizeMb = (file.size / (1024 * 1024)).toStringAsFixed(2);
-  //       _showSnack('Fayl juda katta: $sizeMb MB. Maks. 10 MB.', Colors.red);
-  //       return null;
-  //     }
-  //     return file;
-  //   } catch (e) {
-  //     _showSnack('Fayl tanlashda xato: $e', Colors.red);
-  //     return null;
-  //   }
-  // }
+
+  // ── Open bottom sheet ──────────────────────
 
   Future<void> _openSubmitDialog(StudentTask task) async {
     if (!mounted) return;
@@ -404,38 +342,26 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
         },
         onDownloadTaskFile: () => _downloadFile(task.taskFilePath),
         onDownloadSubmissionFile: () => _downloadFile(task.submissionFilePath),
-        // onDownloadTaskFile: () {
-        //   final url = _buildFileUrl(task.taskFilePath);
-        //   if (url == null) {
-        //     _showSnack('Topshiriq fayli topilmadi.', Colors.red);
-        //     return Future.value(null);
-        //   }
-        //   return downloadAndCacheFile(url);
-        // },
-        //
-        // onDownloadSubmissionFile: () {
-        //   final url = _buildFileUrl(task.submissionFilePath);
-        //   if (url == null) {
-        //     _showSnack('Yuborilgan fayl topilmadi.', Colors.red);
-        //     return Future.value(null);
-        //   }
-        //   return downloadAndCacheFile(url);
-        // },
-        // onDownloadTaskFile: () => downloadAndCacheFile(task.taskFilePath!),
-        // onDownloadSubmissionFile: () => downloadAndCacheFile(task.submissionFilePath!),
-
         showSnack: _showSnack,
         formatDate: _formatDate,
       ),
     );
   }
+
+  // ── Submit task ────────────────────────────
+
   Future<void> _submitTask({
     required int taskId,
     required String feedback,
     PlatformFile? file,
   }) async {
-    if (!mounted) return;
+    final task = _tasks.where((t) => t.id == taskId).firstOrNull;
 
+    if (task != null && _isTaskExpiredByDate(task.dueDate)) {
+      _showSnack("Topshiriq muddati o'tgan. Endi yuborib bo'lmaydi.", Colors.red);
+      return;
+    }
+    if (!mounted) return;
     setState(() => _isSubmitting = true);
 
     try {
@@ -455,18 +381,17 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
         ..fields['feedback'] = feedback.trim();
 
       if (file != null) {
-        if (file.bytes != null) {
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'file',
-              file.bytes!,
-              filename: file.name,
-            ),
-          );
-        } else {
-          _showSnack('Fayl bytes topilmadi.', Colors.red);
+        if (file.bytes == null || file.bytes!.isEmpty) {
+          _showSnack('Fayl bytes topilmadi yoki bo\'sh.', Colors.red);
           return;
         }
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: file.name,
+          ),
+        );
       }
 
       final streamedResponse = await request.send();
@@ -482,18 +407,20 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
         case 201:
           _showSnack('Topshiriq muvaffaqiyatli yuborildi ✅', AppColors.green);
           await _loadTasks();
-          return;
         case 401:
           _showSnack('Sessiya tugagan. Qayta login qiling.', Colors.red);
-          return;
         case 413:
-          _showSnack('Server faylni qabul qilmadi. 10 MB dan kichik fayl yuboring.', Colors.red);
-          return;
+          _showSnack(
+            'Server faylni qabul qilmadi. 10 MB dan kichik fayl yuboring.',
+            Colors.red,
+          );
         case 422:
           _showSnack(_parse422(response.body), Colors.red);
-          return;
         default:
-          _showSnack(_parseErrorMessage(response.body, response.statusCode), Colors.red);
+          _showSnack(
+            _parseErrorMessage(response.body, response.statusCode),
+            Colors.red,
+          );
       }
     } on http.ClientException catch (e) {
       _showSnack('Tarmoq xatosi: ${e.message}', Colors.red);
@@ -503,84 +430,8 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
-  // Future<void> _submitTask({
-  //   required int taskId,
-  //   required String feedback,
-  //   PlatformFile? file,
-  // }) async {
-  //   if (!mounted) return;
-  //   if (file != null) {
-  //     if (file.path == null || file.path!.isEmpty) {
-  //       _showSnack('Fayl yo\'li topilmadi.', Colors.red);
-  //       return;
-  //     }
-  //     if (file.size <= 0) {
-  //       _showSnack('Fayl noto\'g\'ri yoki bo\'sh.', Colors.red);
-  //       return;
-  //     }
-  //     if (file.size > AppConstants.maxFileSizeBytes) {
-  //       final sizeMb = (file.size / (1024 * 1024)).toStringAsFixed(2);
-  //       _showSnack('Fayl juda katta: $sizeMb MB. Maks. 10 MB.', Colors.red);
-  //       return;
-  //     }
-  //   }
-  //
-  //   setState(() => _isSubmitting = true);
-  //
-  //   try {
-  //     final token = await _getToken();
-  //     if (token == null || token.isEmpty) {
-  //       _showSnack('Token topilmadi.', Colors.red);
-  //       return;
-  //     }
-  //
-  //     final request = http.MultipartRequest(
-  //       'POST',
-  //       Uri.parse('${AppConstants.baseUrl}/student/tasks'),
-  //     )
-  //       ..headers['Authorization'] = 'Bearer $token'
-  //       ..headers['Accept'] = 'application/json'
-  //       ..fields['task_id'] = taskId.toString()
-  //       ..fields['feedback'] = feedback;
-  //
-  //     if (file != null && file.path != null) {
-  //       request.files.add(await http.MultipartFile.fromPath(
-  //         'file', file.path!, filename: file.name,
-  //       ));
-  //     }
-  //
-  //     final response = await http.Response.fromStream(
-  //       await _httpClient.send(request),
-  //     );
-  //
-  //     if (!mounted) return;
-  //
-  //     switch (response.statusCode) {
-  //       case 200:
-  //       case 201:
-  //         _showSnack('Topshiriq muvaffaqiyatli yuborildi ✅', AppColors.green);
-  //         await _loadTasks();
-  //         return;
-  //       case 401:
-  //         _showSnack('Sessiya tugagan. Qayta login qiling.', Colors.red);
-  //         return;
-  //       case 413:
-  //         _showSnack('Server faylni qabul qilmadi. 10 MB dan kichik fayl yuboring.', Colors.red);
-  //         return;
-  //       case 422:
-  //         _showSnack(_parse422(response.body), Colors.red);
-  //         return;
-  //       default:
-  //         _showSnack(_parseErrorMessage(response.body, response.statusCode), Colors.red);
-  //     }
-  //   } on http.ClientException catch (e) {
-  //     _showSnack('Tarmoq xatosi: ${e.message}', Colors.red);
-  //   } catch (e) {
-  //     _showSnack('Kutilmagan xato: $e', Colors.red);
-  //   } finally {
-  //     if (mounted) setState(() => _isSubmitting = false);
-  //   }
-  // }
+
+  // ── Error parsers ──────────────────────────
 
   String _parse422(String body) {
     try {
@@ -592,9 +443,9 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
           if (first is List && first.isNotEmpty) return first.first.toString();
         }
       }
-      return json['message']?.toString() ?? 'Ma\'lumotlarda xato bor.';
+      return json['message']?.toString() ?? "Ma'lumotlarda xato bor.";
     } catch (_) {
-      return 'Ma\'lumotlarda xato bor.';
+      return "Ma'lumotlarda xato bor.";
     }
   }
 
@@ -606,6 +457,8 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
       return 'Yuborishda xato: $code';
     }
   }
+
+  // ── Snack helper ───────────────────────────
 
   void _showSnack(String text, Color color) {
     if (!mounted) return;
@@ -619,6 +472,8 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
       ),
     );
   }
+
+  // ── Date formatter ─────────────────────────
 
   String _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
@@ -634,6 +489,8 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     }
   }
 
+  // ── Build ──────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -644,7 +501,9 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.accent),
+      );
     }
 
     if (_error.isNotEmpty) {
@@ -674,21 +533,34 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                     color: Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.wifi_off_rounded, size: 32, color: Colors.red),
+                  child: const Icon(
+                    Icons.wifi_off_rounded,
+                    size: 32,
+                    color: Colors.red,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   _error,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: _loadTasks,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: const Text('Qayta urinish'),
@@ -721,13 +593,21 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
             const SizedBox(height: 16),
             const Text(
               'Topshiriqlar mavjud emas',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Rahbaringiz topshiriq yuklaganida\nbu yerda ko\'rinadi',
+              "Rahbaringiz topshiriq yuklaganida\nbu yerda ko'rinadi",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8), height: 1.5),
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF94A3B8),
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -735,11 +615,23 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     }
 
     final submittedCount = _tasks
-        .where((t) => SubmissionStatus.fromString(t.submissionStatus) == SubmissionStatus.submitted)
+        .where(
+          (t) =>
+      SubmissionStatus.fromString(t.submissionStatus) ==
+          SubmissionStatus.submitted,
+    )
         .length;
-    final pendingCount = _tasks
-        .where((t) => SubmissionStatus.fromString(t.submissionStatus) == SubmissionStatus.pending)
-        .length;
+    bool isTaskExpired(StudentTask task) {
+      return _isTaskExpiredByDate(task.dueDate);
+    }
+    final expiredCount = _tasks.where((t) {
+      final status = SubmissionStatus.fromString(t.submissionStatus);
+      return status != SubmissionStatus.submitted && isTaskExpired(t);
+    }).length;
+    final pendingCount = _tasks.where((t) {
+      final status = SubmissionStatus.fromString(t.submissionStatus);
+      return status == SubmissionStatus.pending && !isTaskExpired(t);
+    }).length;
 
     return RefreshIndicator(
       color: AppColors.accent,
@@ -763,7 +655,10 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
@@ -800,6 +695,14 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                     color: AppColors.amber,
                     bg: AppColors.amberBg,
                     icon: Icons.schedule_rounded,
+                  ),
+                  const SizedBox(width: 10),
+                  _StatChip(
+                    label: 'Muddati tugagan',
+                    count: expiredCount,
+                    color: Colors.red,
+                    bg: const Color(0xFFFEE2E2),
+                    icon: Icons.lock_clock_rounded,
                   ),
                 ],
               ),
@@ -862,7 +765,11 @@ class _StatChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '$count $label',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -889,7 +796,19 @@ class _SimpleTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isExpired =
+        task.dueDate != null &&
+            DateTime.now().isAfter(
+              DateTime.parse(task.dueDate!.replaceFirst(' ', 'T')),
+            );
+
     final status = SubmissionStatus.fromString(task.submissionStatus);
+    final bool showExpired = isExpired && status != SubmissionStatus.submitted;
+
+    final String statusLabel = showExpired ? 'Muddati tugagan' : status.label;
+    final Color statusColor = showExpired ? Colors.red : status.color;
+    final Color statusBg = showExpired ? const Color(0xFFFEE2E2) : status.backgroundColor;
+    final IconData statusIcon = showExpired ? Icons.lock_clock_rounded : status.icon;
 
     bool isUrgent = false;
     if (task.dueDate != null) {
@@ -925,8 +844,10 @@ class _SimpleTaskCard extends StatelessWidget {
           Container(
             height: 4,
             decoration: BoxDecoration(
-              color: status.color.withValues(alpha: 0.7),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              color: statusColor.withValues(alpha: 0.7),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
           ),
           Padding(
@@ -975,7 +896,10 @@ class _SimpleTaskCard extends StatelessWidget {
                             const SizedBox(height: 3),
                             Text(
                               task.groupName!,
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
                           ],
                         ],
@@ -983,22 +907,25 @@ class _SimpleTaskCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
-                        color: status.backgroundColor,
+                        color: statusBg,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(status.icon, size: 12, color: status.color),
+                          Icon(statusIcon, size: 12, color: statusColor),
                           const SizedBox(width: 4),
                           Text(
-                            status.label,
+                            statusLabel,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: status.color,
+                              color: statusColor,
                             ),
                           ),
                         ],
@@ -1053,10 +980,14 @@ class _SimpleTaskCard extends StatelessWidget {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.visibility_rounded, size: 18, color: Colors.white),
+                        Icon(
+                          Icons.visibility_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                         SizedBox(width: 8),
                         Text(
-                          'Topshiriqni ko\'rish',
+                          "Topshiriqni ko'rish",
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -1071,8 +1002,13 @@ class _SimpleTaskCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    task.createdAt != null ? 'Berilgan: ${formatDate(task.createdAt)}' : '',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                    task.createdAt != null
+                        ? 'Berilgan: ${formatDate(task.createdAt)}'
+                        : '',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFCBD5E1),
+                    ),
                   ),
                 ),
               ],
@@ -1105,7 +1041,8 @@ class _MetaItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = urgent ? AppColors.amber : (iconColor ?? const Color(0xFF94A3B8));
+    final effectiveColor =
+    urgent ? AppColors.amber : (iconColor ?? const Color(0xFF94A3B8));
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1114,7 +1051,10 @@ class _MetaItem extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            ),
             Text(
               value,
               style: TextStyle(
@@ -1131,8 +1071,9 @@ class _MetaItem extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// BOTTOM SHEET
+// BOTTOM SHEET (widget)
 // ─────────────────────────────────────────────
+
 class _TaskDetailBottomSheet extends StatefulWidget {
   const _TaskDetailBottomSheet({
     required this.task,
@@ -1155,7 +1096,7 @@ class _TaskDetailBottomSheet extends StatefulWidget {
   PlatformFile? file,
   }) onSubmit;
 
-  // IKKALASI HAM endi path qaytaradi
+  /// Her ikkalasi ham yuklab olingan local path yoki null qaytaradi.
   final Future<String?> Function() onDownloadTaskFile;
   final Future<String?> Function() onDownloadSubmissionFile;
 
@@ -1163,27 +1104,14 @@ class _TaskDetailBottomSheet extends StatefulWidget {
   final String Function(String?) formatDate;
 
   @override
-  State<_TaskDetailBottomSheet> createState() =>
-      _TaskDetailBottomSheetState();
+  State<_TaskDetailBottomSheet> createState() => _TaskDetailBottomSheetState();
 }
 
 class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
   late final TextEditingController _feedbackController;
-
   PlatformFile? _selectedFile;
   String? _downloadedTaskFilePath;
   String? _downloadedSubmissionPath;
-
-  bool _isTaskExpired(String? dueDate) {
-    if (dueDate == null || dueDate.trim().isEmpty) return false;
-
-    try {
-      final due = DateTime.parse(dueDate.replaceFirst(' ', 'T')).toLocal();
-      return DateTime.now().isAfter(due);
-    } catch (_) {
-      return false;
-    }
-  }
 
   @override
   void initState() {
@@ -1196,67 +1124,76 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
     _feedbackController.dispose();
     super.dispose();
   }
+
+  // ── Helpers ────────────────────────────────
+
+  bool _isTaskExpired(String? dueDate) {
+    if (dueDate == null || dueDate.trim().isEmpty) return false;
+    try {
+      final due = DateTime.parse(dueDate.replaceFirst(' ', 'T'));
+      return DateTime.now().isAfter(due);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _fileNameFromPath(String path) {
+    final parts = path.replaceAll('\\', '/').split('/');
+    return parts.isNotEmpty ? parts.last : path;
+  }
+
+  // ── Open downloaded file ───────────────────
+
   Future<void> _openDownloadedFile(String path) async {
     try {
       final result = await OpenFilex.open(path);
-
       if (result.type != ResultType.done) {
-        widget.showSnack(
-          'Faylni ochib bo‘lmadi: ${result.message}',
-          Colors.red,
-        );
+        widget.showSnack("Faylni ochib bo'lmadi: ${result.message}", Colors.red);
       }
     } catch (e) {
       widget.showSnack('Faylni ochishda xato: $e', Colors.red);
     }
   }
+
+  // ── Download handlers ──────────────────────
+
   Future<void> _handleDownloadTaskFile() async {
     final path = await widget.onDownloadTaskFile();
     if (!mounted) return;
-
     if (path != null && path.isNotEmpty) {
-      setState(() {
-        _downloadedTaskFilePath = path;
-      });
+      setState(() => _downloadedTaskFilePath = path);
     }
   }
 
   Future<void> _handleDownloadSubmissionFile() async {
     final path = await widget.onDownloadSubmissionFile();
     if (!mounted) return;
-
     if (path != null && path.isNotEmpty) {
-      setState(() {
-        _downloadedSubmissionPath = path;
-      });
+      setState(() => _downloadedSubmissionPath = path);
     }
   }
 
-  Future<void> _handlePickFile() async {
-    final bool isExpired = _isTaskExpired(widget.task.dueDate);
+  // ── Pick file handler ──────────────────────
 
-    if (isExpired) {
+  Future<void> _handlePickFile() async {
+    if (_isTaskExpired(widget.task.dueDate)) {
       widget.showSnack(
-        'Topshiriq muddati o‘tgan. Fayl biriktirib bo‘lmaydi.',
+        "Topshiriq muddati o'tgan. Fayl biriktirib bo'lmaydi.",
         Colors.red,
       );
       return;
     }
-
     final file = await widget.onPickFile();
     if (!mounted) return;
-
-    if (file != null) {
-      setState(() => _selectedFile = file);
-    }
+    if (file != null) setState(() => _selectedFile = file);
   }
 
-  Future<void> _handleSubmit() async {
-    final bool isExpired = _isTaskExpired(widget.task.dueDate);
+  // ── Submit handler ─────────────────────────
 
-    if (isExpired) {
+  Future<void> _handleSubmit() async {
+    if (_isTaskExpired(widget.task.dueDate)) {
       widget.showSnack(
-        'Topshiriq muddati o‘tgan. Endi yuborib bo‘lmaydi.',
+        "Topshiriq muddati o'tgan. Endi yuborib bo'lmaydi.",
         Colors.red,
       );
       return;
@@ -1266,7 +1203,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
 
     if (file != null && file.size > widget.maxFileSizeBytes) {
       widget.showSnack(
-        'Fayl 10 MB dan katta bo‘lmasligi kerak.',
+        "Fayl 10 MB dan katta bo'lmasligi kerak.",
         Colors.red,
       );
       return;
@@ -1278,24 +1215,34 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
     );
 
     if (!mounted) return;
-
     setState(() {
       _selectedFile = null;
       _feedbackController.clear();
     });
   }
 
+  // ── Build ──────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final bool isExpired = _isTaskExpired(widget.task.dueDate);
     final status = SubmissionStatus.fromString(widget.task.submissionStatus);
+    final bool showExpired = isExpired && status != SubmissionStatus.submitted;
 
+    final String headerStatusLabel = showExpired ? 'Muddati tugagan' : status.label;
+    final Color headerStatusColor = showExpired ? Colors.red : status.color;
+    final Color headerStatusBg =
+    showExpired ? const Color(0xFFFEE2E2) : status.backgroundColor;
+    final IconData headerStatusIcon =
+    showExpired ? Icons.lock_clock_rounded : status.icon;
     final selectedFileText = _selectedFile == null
-        ? (isExpired ? 'Muddati o‘tgan' : 'Fayl biriktirish')
-        : '${_selectedFile!.name}  •  ${(_selectedFile!.size / 1024 / 1024).toStringAsFixed(2)} MB';
+        ? (isExpired ? "Muddati o'tgan" : 'Fayl biriktirish')
+        : '${_selectedFile!.name}  •  '
+        '${(_selectedFile!.size / 1024 / 1024).toStringAsFixed(2)} MB';
 
     final hasFeedback =
-        widget.task.feedback != null && widget.task.feedback!.trim().isNotEmpty;
+        widget.task.feedback != null &&
+            widget.task.feedback!.trim().isNotEmpty;
 
     final hasSubmissionFile =
         widget.task.submissionFilePath != null &&
@@ -1315,6 +1262,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
         top: false,
         child: Column(
           children: [
+            // ── Handle ────────────────────────
             const SizedBox(height: 10),
             Center(
               child: Container(
@@ -1328,6 +1276,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
             ),
             const SizedBox(height: 12),
 
+            // ── Header ────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -1338,12 +1287,12 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.darkSurface,
+                        color: AppColors.darkCard,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: Color(0xFF374151),
                         size: 16,
                       ),
                     ),
@@ -1356,7 +1305,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                         Text(
                           widget.task.supervisorName ?? 'Rahbar',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF0F172A),
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -1378,23 +1327,23 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: status.backgroundColor.withValues(alpha: 0.15),
+                      color: headerStatusBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: status.color.withValues(alpha: 0.3),
+                        color: headerStatusColor.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(status.icon, size: 12, color: status.color),
+                        Icon(headerStatusIcon, size: 12, color: headerStatusColor),
                         const SizedBox(width: 4),
                         Text(
-                          status.label,
+                          headerStatusLabel,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: status.color,
+                            color: headerStatusColor,
                           ),
                         ),
                       ],
@@ -1405,6 +1354,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
             ),
             const SizedBox(height: 14),
 
+            // ── Due date banner ───────────────
             if (widget.task.dueDate != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1415,9 +1365,15 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.darkSurface,
+                    color: isExpired
+                        ? const Color(0xFFFEE2E2)
+                        : const Color(0xFFF0F9FF),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.darkBorder),
+                    border: Border.all(
+                      color: isExpired
+                          ? Colors.red.withValues(alpha: 0.3)
+                          : AppColors.accent.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1428,7 +1384,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                         size: 15,
                         color: isExpired
                             ? Colors.redAccent
-                            : AppColors.darkSubtext,
+                            : AppColors.accent,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -1450,7 +1406,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                             fontWeight: FontWeight.w600,
                             color: isExpired
                                 ? Colors.redAccent
-                                : Colors.white,
+                                : const Color(0xFF0F172A),
                           ),
                         ),
                       ),
@@ -1460,12 +1416,14 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
               ),
             const SizedBox(height: 14),
 
+            // ── Scrollable chat area ──────────
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      // Task bubble (left)
                       _ChatBubble(
                         isRight: false,
                         child: Column(
@@ -1474,7 +1432,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                             Text(
                               widget.task.title,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Color(0xFF0F172A),
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                               ),
@@ -1485,7 +1443,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                               Text(
                                 widget.task.description!,
                                 style: const TextStyle(
-                                  color: Color(0xFF93B8D4),
+                                  color: Color(0xFF475569),
                                   fontSize: 13,
                                   height: 1.5,
                                 ),
@@ -1505,24 +1463,30 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           ],
                         ),
                       ),
+
+                      // Task file bubble
                       if (hasTaskFile) ...[
                         const SizedBox(height: 8),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: _ChatFileBubble(
-                            fileName: _fileNameFromPath(widget.task.taskFilePath!),
+                            fileName: _fileNameFromPath(
+                              widget.task.taskFilePath!,
+                            ),
                             caption: 'Topshiriq fayli',
                             isRight: false,
                             onTap: _handleDownloadTaskFile,
                             showOpenButton: _downloadedTaskFilePath != null,
                             onOpen: _downloadedTaskFilePath != null
-                                ? () async => _openDownloadedFile(_downloadedTaskFilePath!)
+                                ? () => _openDownloadedFile(
+                              _downloadedTaskFilePath!,
+                            )
                                 : null,
                           ),
                         ),
                       ],
 
-
+                      // Submission bubbles (right)
                       if (hasFeedback || hasSubmissionFile) ...[
                         const SizedBox(height: 16),
 
@@ -1546,7 +1510,9 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: Text(
-                                      widget.formatDate(widget.task.submittedAt),
+                                      widget.formatDate(
+                                        widget.task.submittedAt,
+                                      ),
                                       style: const TextStyle(
                                         color: Color(0xFF93C5FD),
                                         fontSize: 10,
@@ -1563,15 +1529,17 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: _ChatFileBubble(
-                              fileName: _fileNameFromPath(widget.task.submissionFilePath!),
-                              caption: _downloadedSubmissionPath != null
-                                  ? 'Yuborilgan fayl'
-                                  : 'Yuborilgan fayl',
+                              fileName: _fileNameFromPath(
+                                widget.task.submissionFilePath!,
+                              ),
+                              caption: 'Yuborilgan fayl',
                               isRight: true,
                               onTap: _handleDownloadSubmissionFile,
                               showOpenButton: _downloadedSubmissionPath != null,
                               onOpen: _downloadedSubmissionPath != null
-                                  ? () async => _openDownloadedFile(_downloadedSubmissionPath!)
+                                  ? () => _openDownloadedFile(
+                                _downloadedSubmissionPath!,
+                              )
                                   : null,
                             ),
                           ),
@@ -1585,6 +1553,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
               ),
             ),
 
+            // ── Input area ────────────────────
             Container(
               padding: EdgeInsets.only(
                 left: 16,
@@ -1593,27 +1562,29 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 16,
               ),
               decoration: const BoxDecoration(
-                color: AppColors.darkSurface,
-                border: Border(top: BorderSide(color: AppColors.darkBorder)),
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: AppColors.darkBorder),
+                ),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Feedback field
                   TextField(
                     controller: _feedbackController,
                     enabled: !isExpired && !widget.isSubmitting,
                     maxLines: 3,
                     minLines: 1,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF0F172A),
                       fontSize: 14,
                     ),
                     decoration: InputDecoration(
                       hintText: isExpired
-                          ? 'Topshiriq muddati o‘tgan'
+                          ? "Topshiriq muddati o'tgan"
                           : 'Izoh yozing...',
-                      hintStyle: const TextStyle(
-                        color: AppColors.darkSubtext,
-                      ),
+                      hintStyle: const TextStyle(color: AppColors.darkSubtext),
                       filled: true,
                       fillColor: AppColors.darkCard,
                       contentPadding: const EdgeInsets.symmetric(
@@ -1637,10 +1608,17 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           width: 1.5,
                         ),
                       ),
+                      disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: AppColors.darkBorder,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
 
+                  // File picker row
                   GestureDetector(
                     onTap: (isExpired || widget.isSubmitting)
                         ? null
@@ -1677,7 +1655,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                               selectedFileText,
                               style: TextStyle(
                                 color: _selectedFile != null
-                                    ? Colors.white
+                                    ? const Color(0xFF0F172A)
                                     : AppColors.darkSubtext,
                                 fontSize: 13,
                                 fontWeight: _selectedFile != null
@@ -1689,7 +1667,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           ),
                           if (_selectedFile != null)
                             GestureDetector(
-                              onTap: () => setState(() => _selectedFile = null),
+                              onTap: () =>
+                                  setState(() => _selectedFile = null),
                               child: const Icon(
                                 Icons.close_rounded,
                                 size: 18,
@@ -1700,21 +1679,25 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 12),
 
+                  // Submit button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: FilledButton(
-                      onPressed: (widget.isSubmitting || isExpired)
+                      onPressed:
+                      (widget.isSubmitting || isExpired)
                           ? null
                           : _handleSubmit,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.accent,
                         disabledBackgroundColor: isExpired
                             ? Colors.redAccent.withValues(alpha: 0.35)
-                            : null,
+                            : AppColors.accent.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: widget.isSubmitting
                           ? const SizedBox(
@@ -1727,8 +1710,12 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       )
                           : Text(
                         isExpired
-                            ? 'Muddati o‘tgan'
+                            ? "Muddati o'tgan"
                             : 'Topshiriq yuborish',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -1740,12 +1727,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
       ),
     );
   }
-
-  String _fileNameFromPath(String path) {
-    final parts = path.replaceAll('\\', '/').split('/');
-    return parts.isNotEmpty ? parts.last : path;
-  }
 }
+
 // ─────────────────────────────────────────────
 // CHAT BUBBLE
 // ─────────────────────────────────────────────
@@ -1766,19 +1749,36 @@ class _ChatBubble extends StatelessWidget {
         ),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isRight ? const Color(0xFF1E4D7B) : AppColors.darkSurface,
+          color: isRight
+              ? AppColors.accent
+              : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
-            bottomLeft: isRight ? const Radius.circular(16) : const Radius.circular(4),
-            bottomRight: isRight ? const Radius.circular(4) : const Radius.circular(16),
+            bottomLeft: isRight
+                ? const Radius.circular(16)
+                : const Radius.circular(4),
+            bottomRight: isRight
+                ? const Radius.circular(4)
+                : const Radius.circular(16),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: child,
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────
+// CHAT FILE BUBBLE
+// ─────────────────────────────────────────────
 
 class _ChatFileBubble extends StatelessWidget {
   const _ChatFileBubble({
@@ -1803,16 +1803,25 @@ class _ChatFileBubble extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 320),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isRight ? const Color(0xFF214F86) : AppColors.darkSurface,
+        color: isRight ? AppColors.accent : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isRight
-              ? const Color(0xFF3166A7)
+              ? AppColors.accentLight.withValues(alpha: 0.4)
               : AppColors.darkBorder,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // Download button
           GestureDetector(
             onTap: onTap,
             child: Container(
@@ -1820,19 +1829,20 @@ class _ChatFileBubble extends StatelessWidget {
               height: 46,
               decoration: BoxDecoration(
                 color: isRight
-                    ? const Color(0xFF2D5E99)
-                    : AppColors.darkCard,
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : AppColors.accent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.download_rounded,
-                color: Color(0xFF7DB7FF),
+                color: isRight ? Colors.white : AppColors.accent,
                 size: 24,
               ),
             ),
           ),
           const SizedBox(width: 12),
 
+          // File info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1841,8 +1851,8 @@ class _ChatFileBubble extends StatelessWidget {
                   fileName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isRight ? Colors.white : const Color(0xFF0F172A),
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     height: 1.35,
@@ -1851,8 +1861,10 @@ class _ChatFileBubble extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   caption,
-                  style: const TextStyle(
-                    color: AppColors.darkSubtext,
+                  style: TextStyle(
+                    color: isRight
+                        ? Colors.white.withValues(alpha: 0.7)
+                        : AppColors.darkSubtext,
                     fontSize: 12,
                   ),
                 ),
@@ -1860,6 +1872,7 @@ class _ChatFileBubble extends StatelessWidget {
             ),
           ),
 
+          // Open button (only after download)
           if (showOpenButton && onOpen != null) ...[
             const SizedBox(width: 10),
             GestureDetector(
@@ -1868,12 +1881,14 @@ class _ChatFileBubble extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.22),
+                  color: isRight
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.visibility_rounded,
-                  color: Color(0xFFC7DCFF),
+                  color: isRight ? Colors.white : AppColors.accent,
                   size: 20,
                 ),
               ),
@@ -1886,100 +1901,10 @@ class _ChatFileBubble extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// CHAT FILE BUBBLE
-// ─────────────────────────────────────────────
-
-// class _ChatFileBubble extends StatelessWidget {
-//   const _ChatFileBubble({
-//     required this.fileName,
-//     required this.caption,
-//     required this.isRight,
-//     required this.onTap,
-//   });
-//
-//   final String fileName;
-//   final String caption;
-//   final bool isRight;
-//   final VoidCallback onTap;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: onTap,
-//       child: Container(
-//         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
-//         padding: const EdgeInsets.all(12),
-//         decoration: BoxDecoration(
-//           color: isRight ? const Color(0xFF1E4D7B) : AppColors.darkSurface,
-//           borderRadius: BorderRadius.only(
-//             topLeft: const Radius.circular(16),
-//             topRight: const Radius.circular(16),
-//             bottomLeft: isRight ? const Radius.circular(16) : const Radius.circular(4),
-//             bottomRight: isRight ? const Radius.circular(4) : const Radius.circular(16),
-//           ),
-//           border: Border.all(color: AppColors.darkBorder),
-//         ),
-//         child: Row(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             Container(
-//               width: 38, height: 38,
-//               decoration: BoxDecoration(
-//                 color: AppColors.accent.withValues(alpha: 0.2),
-//                 shape: BoxShape.circle,
-//               ),
-//               child: const Icon(Icons.download_rounded, color: AppColors.accentLight, size: 20),
-//             ),
-//             const SizedBox(width: 10),
-//             Flexible(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     fileName,
-//                     maxLines: 2,
-//                     overflow: TextOverflow.ellipsis,
-//                     style: const TextStyle(
-//                       color: Colors.white,
-//                       fontWeight: FontWeight.w600,
-//                       fontSize: 13,
-//                     ),
-//                   ),
-//                   const SizedBox(height: 3),
-//                   Text(
-//                     caption,
-//                     style: const TextStyle(color: AppColors.darkSubtext, fontSize: 11),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// ─────────────────────────────────────────────
 // MODEL
 // ─────────────────────────────────────────────
 
 class StudentTask {
-  final int id;
-  final String title;
-  final String? description;
-  final String? dueDate;
-  final String? createdAt;
-  final String taskStatus;
-  final String? taskFilePath;
-  final String submissionStatus;
-  final String? submissionFilePath;
-  final String? score;
-  final String? feedback;
-  final String? submittedAt;
-  final String? supervisorName;
-  final String? groupName;
-
   const StudentTask({
     required this.id,
     required this.title,
@@ -1997,9 +1922,24 @@ class StudentTask {
     this.groupName,
   });
 
+  final int id;
+  final String title;
+  final String? description;
+  final String? dueDate;
+  final String? createdAt;
+  final String taskStatus;
+  final String? taskFilePath;
+  final String submissionStatus;
+  final String? submissionFilePath;
+  final String? score;
+  final String? feedback;
+  final String? submittedAt;
+  final String? supervisorName;
+  final String? groupName;
+
   factory StudentTask.fromJson(Map<String, dynamic> json) {
     final supervisor = json['supervisor'] as Map<String, dynamic>?;
-    final group = json['group'] as Map<String, dynamic>?;
+    final group     = json['group']      as Map<String, dynamic>?;
 
     return StudentTask(
       id: int.tryParse(json['id'].toString()) ?? 0,
@@ -2009,7 +1949,8 @@ class StudentTask {
       createdAt: json['created_at']?.toString(),
       taskStatus: json['task_status']?.toString() ?? '',
       taskFilePath: json['task_file_path']?.toString(),
-      submissionStatus: json['submission_status']?.toString() ?? 'pending',
+      submissionStatus:
+      json['submission_status']?.toString() ?? 'pending',
       submissionFilePath: json['submission_file_path']?.toString(),
       score: json['score']?.toString(),
       feedback: json['feedback']?.toString(),

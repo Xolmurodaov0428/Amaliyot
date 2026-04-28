@@ -78,6 +78,259 @@ class AttendanceRecord {
     return 'Kechki seans';
   }
 }
+class UzbekCalendarDialog extends StatefulWidget {
+  final DateTime selectedDate;
+  final Set<String> allowedDates;
+
+  const UzbekCalendarDialog({
+    super.key,
+    required this.selectedDate,
+    required this.allowedDates,
+  });
+
+  @override
+  State<UzbekCalendarDialog> createState() => _UzbekCalendarDialogState();
+}
+
+class _UzbekCalendarDialogState extends State<UzbekCalendarDialog> {
+  late DateTime visibleMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    visibleMonth = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+    );
+  }
+
+  String _key(DateTime d) {
+    return '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Yanvar',
+      'Fevral',
+      'Mart',
+      'Aprel',
+      'May',
+      'Iyun',
+      'Iyul',
+      'Avgust',
+      'Sentabr',
+      'Oktabr',
+      'Noyabr',
+      'Dekabr',
+    ];
+    return months[month - 1];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final firstDay = DateTime(visibleMonth.year, visibleMonth.month, 1);
+    final lastDay = DateTime(visibleMonth.year, visibleMonth.month + 1, 0);
+
+    final startWeekday = firstDay.weekday % 7;
+    final totalCells = startWeekday + lastDay.day;
+    final cellCount = (totalCells / 7).ceil() * 7;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.all(18),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Sana tanlash',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+
+            Row(
+              children: [
+                Text(
+                  '${_monthName(visibleMonth.month)} ${visibleMonth.year}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      visibleMonth = DateTime(
+                        visibleMonth.year,
+                        visibleMonth.month - 1,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.chevron_left_rounded),
+                ),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      visibleMonth = DateTime(
+                        visibleMonth.year,
+                        visibleMonth.month + 1,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.chevron_right_rounded),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            const Row(
+              children: [
+                _CalendarWeekDay('Yak'),
+                _CalendarWeekDay('Dush'),
+                _CalendarWeekDay('Sesh'),
+                _CalendarWeekDay('Chor'),
+                _CalendarWeekDay('Pay'),
+                _CalendarWeekDay('Jum'),
+                _CalendarWeekDay('Shan'),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: cellCount,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+              ),
+              itemBuilder: (context, index) {
+                final dayNumber = index - startWeekday + 1;
+
+                if (dayNumber < 1 || dayNumber > lastDay.day) {
+                  return const SizedBox();
+                }
+
+                final date = DateTime(
+                  visibleMonth.year,
+                  visibleMonth.month,
+                  dayNumber,
+                );
+
+                final key = _key(date);
+                final isAllowed = widget.allowedDates.contains(key);
+                final isSelected = _key(widget.selectedDate) == key;
+                final isToday = _key(DateTime.now()) == key;
+
+                return InkWell(
+                  borderRadius: BorderRadius.circular(100),
+                    onTap: () => Navigator.pop(context, date),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.teal
+                          : isAllowed
+                          ? const Color(0xFFD1FAE5)
+                          : isToday
+                          ? const Color(0xFFE0F2FE)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(100),
+                      border: isAllowed
+                          ? Border.all(color: Colors.teal, width: 1.5)
+                          : Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$dayNumber',
+                        style: TextStyle(
+                          fontWeight: isAllowed || isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : isAllowed
+                              ? Colors.teal.shade800
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5),
+                    border: Border.all(color: Colors.teal),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text('Amaliyot kuni'),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Bekor qilish'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarWeekDay extends StatelessWidget {
+  final String text;
+
+  const _CalendarWeekDay(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Center(
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class DayAttendance {
   final DateTime date;
@@ -169,7 +422,7 @@ class _DavomatPageState extends State<DavomatPage> {
 
   List<DayAttendance> _history = [];
   int dailySessions = 3;
-
+  Set<String> selectedDates = {};
   @override
   void initState() {
     super.initState();
@@ -187,9 +440,13 @@ class _DavomatPageState extends State<DavomatPage> {
         '${selectedDate.day.toString().padLeft(2, '0')}';
   }
 
+  bool _isSelectedDateAllowed() {
+    if (selectedDates.isEmpty) return true;
+    return selectedDates.contains(_selectedDateKey());
+  }
+
   Set<String> _existingSessionsForSelectedDate() {
     final target = _selectedDateKey();
-
     for (final day in _history) {
       final dayKey = '${day.date.year.toString().padLeft(4, '0')}-'
           '${day.date.month.toString().padLeft(2, '0')}-'
@@ -259,139 +516,208 @@ class _DavomatPageState extends State<DavomatPage> {
     return '$hh:$mm';
   }
 
-  DateTime _sessionWindowStart(String session) {
+  // DateTime _sessionWindowStart(String session) {
+  //   if (dailySessions == 1) {
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       11,
+  //       30,
+  //     );
+  //   }
+  //
+  //   if (dailySessions == 2) {
+  //     if (session == 'session_1') {
+  //       return DateTime(
+  //         selectedDate.year,
+  //         selectedDate.month,
+  //         selectedDate.day,
+  //         9,
+  //         0,
+  //       );
+  //     }
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       13,
+  //       0,
+  //     );
+  //   }
+  //
+  //   if (session == 'session_1') {
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       9,
+  //       0,
+  //     );
+  //   }
+  //
+  //   if (session == 'session_2') {
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       13,
+  //       0,
+  //     );
+  //   }
+  //
+  //   return DateTime(
+  //     selectedDate.year,
+  //     selectedDate.month,
+  //     selectedDate.day,
+  //     15,
+  //     30,
+  //   );
+  // }
+  //
+  // DateTime _sessionWindowEnd(String session) {
+  //   if (dailySessions == 1) {
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       12,
+  //       0,
+  //     );
+  //   }
+  //
+  //   if (dailySessions == 2) {
+  //     if (session == 'session_1') {
+  //       return DateTime(
+  //         selectedDate.year,
+  //         selectedDate.month,
+  //         selectedDate.day,
+  //         9,
+  //         30,
+  //       );
+  //     }
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       13,
+  //       30,
+  //     );
+  //   }
+  //
+  //   if (session == 'session_1') {
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       9,
+  //       30,
+  //     );
+  //   }
+  //
+  //   if (session == 'session_2') {
+  //     return DateTime(
+  //       selectedDate.year,
+  //       selectedDate.month,
+  //       selectedDate.day,
+  //       13,
+  //       30,
+  //     );
+  //   }
+  //
+  //   return DateTime(
+  //     selectedDate.year,
+  //     selectedDate.month,
+  //     selectedDate.day,
+  //     16,
+  //     0,
+  //   );
+  // }
+  DateTime _sessionStart(String session) {
     if (dailySessions == 1) {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        11,
-        30,
-      );
-    }
-
-    if (dailySessions == 2) {
-      if (session == 'session_1') {
-        return DateTime(
-          selectedDate.year,
-          selectedDate.month,
-          selectedDate.day,
-          9,
-          0,
-        );
-      }
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        13,
-        0,
-      );
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 11, 30);
     }
 
     if (session == 'session_1') {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        9,
-        0,
-      );
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 9, 0);
     }
 
     if (session == 'session_2') {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        13,
-        0,
-      );
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 13, 0);
     }
 
-    return DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      15,
-      30,
-    );
+    return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 15, 30);
   }
 
-  DateTime _sessionWindowEnd(String session) {
+  DateTime _sessionEnd(String session) {
     if (dailySessions == 1) {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        12,
-        0,
-      );
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 12, 0);
+    }
+
+    if (session == 'session_1') {
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 9, 30);
+    }
+
+    if (session == 'session_2') {
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 13, 30);
+    }
+
+    return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 16, 0);
+  }
+
+  DateTime _sessionAbsentDeadline(String session) {
+    if (dailySessions == 1) {
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 14, 0);
     }
 
     if (dailySessions == 2) {
       if (session == 'session_1') {
-        return DateTime(
-          selectedDate.year,
-          selectedDate.month,
-          selectedDate.day,
-          9,
-          30,
-        );
+        return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 13, 0);
       }
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        13,
-        30,
-      );
+
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 15, 0);
     }
 
     if (session == 'session_1') {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        9,
-        30,
-      );
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 13, 0);
     }
 
     if (session == 'session_2') {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        13,
-        30,
-      );
+      return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 15, 30);
     }
 
-    return DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      16,
-      0,
-    );
+    return DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 16, 30);
+  }
+
+  String _attendanceNoteForSession(String session) {
+    final now = DateTime.now();
+
+    final start = _sessionStart(session);
+    final end = _sessionEnd(session);
+    final absentDeadline = _sessionAbsentDeadline(session);
+
+    if (now.isBefore(start)) {
+      return 'Vaqti kelmagan';
+    }
+
+    if (!now.isAfter(end)) {
+      return 'Keldi';
+    }
+
+    if (now.isBefore(absentDeadline) || now.isAtSameMomentAs(absentDeadline)) {
+      return 'Kechikib keldi';
+    }
+
+    return 'Kelmadi';
   }
 
   bool _isTooEarlyForSession(String session) {
-    final now = DateTime.now();
-    final start = _sessionWindowStart(session);
-    return now.isBefore(start);
-  }
-
-  bool _isLateForSession(String session) {
-    final now = DateTime.now();
-    final end = _sessionWindowEnd(session);
-    return now.isAfter(end);
+    return _attendanceNoteForSession(session) == 'Vaqti kelmagan';
   }
 
   String _sessionTimeText(String session) {
-    final start = _sessionWindowStart(session);
-    final end = _sessionWindowEnd(session);
+    final start = _sessionStart(session);
+    final end = _sessionEnd(session);
 
     String fmt(DateTime d) {
       final hh = d.hour.toString().padLeft(2, '0');
@@ -467,7 +793,14 @@ class _DavomatPageState extends State<DavomatPage> {
         if (data is! Map<String, dynamic>) {
           return _setError('Ma’lumotlar topilmadi (data field missing).');
         }
+        final selectedDatesRaw =
+            data['selected_dates'] ?? data['active_days'] ?? data['internship']?['selected_dates'];
 
+        final Set<String> apiSelectedDates = {};
+
+        if (selectedDatesRaw is List) {
+          apiSelectedDates.addAll(selectedDatesRaw.map((e) => e.toString()));
+        }
         final dynamic student = data['student'];
         final Map<String, dynamic>? studentMap = (student is Map) ? Map<String, dynamic>.from(student) : null;
         
@@ -509,6 +842,7 @@ class _DavomatPageState extends State<DavomatPage> {
         history.sort((a, b) => b.date.compareTo(a.date));
 
         setState(() {
+          selectedDates = apiSelectedDates;
           dailySessions = apiDailySessions;
           _history = history;
           _isLoading = false;
@@ -549,6 +883,10 @@ class _DavomatPageState extends State<DavomatPage> {
 
     if (selectedDate.isBefore(today)) {
       _snack('O‘tgan kunlar uchun davomat belgilab bo‘lmaydi!', Colors.red);
+      return;
+    }
+    if (!_isSelectedDateAllowed()) {
+      _snack('Bu sana amaliyot kuni emas. Davomat belgilab bo‘lmaydi!', Colors.red);
       return;
     }
     if (_selectedCount == 0) {
@@ -600,19 +938,23 @@ class _DavomatPageState extends State<DavomatPage> {
       if (!mounted) return;
 
       for (final session in sessionsToSend) {
-        final late = _isLateForSession(session);
+        final note = _attendanceNoteForSession(session);
+
+        if (note == 'Vaqti kelmagan') {
+          _snack('$session uchun vaqt hali kelmagan. Ruxsat: ${_sessionTimeText(session)}', Colors.orange);
+          return;
+        }
 
         final body = {
-          // student_id backend'da tokendan olinishi kerak, lekin hozircha body'da yuboramiz
           'student_id': userId,
           'date': _selectedDateKey(),
           'session': session,
-          'status': 'present',
-          'check_in_time': _currentTimeHHmm(),
+          'status': note == 'Kelmadi' ? 'absent' : 'present',
+          'check_in_time': note == 'Kelmadi' ? null : _currentTimeHHmm(),
           'check_out_time': null,
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-          'notes': late ? 'Kechikib keldi' : 'Check-in via mobile',
+          'latitude': note == 'Kelmadi' ? null : position.latitude,
+          'longitude': note == 'Kelmadi' ? null : position.longitude,
+          'notes': note,
         };
 
         final res = await http.post(
@@ -975,7 +1317,7 @@ class _DavomatPageState extends State<DavomatPage> {
             width: 40,
             child: Checkbox(
               value: checked,
-              onChanged: _isLoading ? null : onChange,
+              onChanged: (_isLoading || !_isSelectedDateAllowed()) ? null : onChange,
               activeColor: Colors.teal,
               visualDensity: VisualDensity.compact,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1144,26 +1486,11 @@ class _DavomatPageState extends State<DavomatPage> {
   );
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final firstDate = DateTime(2024, 1, 1);
-    final lastDate = DateTime(2026, 12, 31); // normalized end of period
-
-    // Initial date within range and normalized to YMD
-    final initialDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-    final safeInitialDate = initialDate.isAfter(lastDate)
-        ? lastDate
-        : (initialDate.isBefore(firstDate) ? firstDate : initialDate);
-
-    final picked = await showDatePicker(
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate: safeInitialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: Colors.teal),
-        ),
-        child: child!,
+      builder: (_) => UzbekCalendarDialog(
+        selectedDate: selectedDate,
+        allowedDates: selectedDates,
       ),
     );
 
@@ -1173,10 +1500,10 @@ class _DavomatPageState extends State<DavomatPage> {
       setState(() {
         selectedDate = DateTime(picked.year, picked.month, picked.day);
       });
+
       _syncCheckedSessionsFromHistory();
     }
   }
-
   void _snack(String msg, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();

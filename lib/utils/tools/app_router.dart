@@ -13,8 +13,8 @@ class AppRouter {
     switch (settings.name) {
       case RouteName.login:
         return MaterialPageRoute(builder: (_) => const
-        HomePage()
-        // LoginScreen()
+        // HomePage()
+        LoginScreen()
         );case RouteName.home:
         return MaterialPageRoute(builder: (_) => const HomePage());
 
