@@ -1,0 +1,95 @@
+Bu yerda bitta muhim narsani to‘g‘rilab olaylik:
+👉 APK iconni app ichidan o‘zgartirib bo‘lmaydi (oddiy holatda).
+
+Android’da icon:
+
+android/app/src/main/res/mipmap-...
+
+ichida build vaqtida o‘rnatiladi.
+
+❗ REAL HOLAT
+Funksiya	Mavjud
+App ichida icon tanlash	❌ default yo‘q
+Launcher iconni almashtirish	❌ runtime’da emas
+Dynamic icon (shortcut alias)	✅ mumkin
+✅ SEN QILA OLADIGAN YECHIM
+
+👉 Dynamic App Icon (Android alias orqali)
+
+Bu professional usul.
+
+🔥 1. ANDROID SETUP
+
+AndroidManifest.xml ga qo‘sh:
+
+<activity-alias
+    android:name=".MainActivityBlue"
+    android:enabled="true"
+    android:exported="true"
+    android:icon="@mipmap/ic_launcher_blue"
+    android:targetActivity=".MainActivity">
+
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+    </intent-filter>
+
+</activity-alias>
+
+<activity-alias
+    android:name=".MainActivityDark"
+    android:enabled="false"
+    android:exported="true"
+    android:icon="@mipmap/ic_launcher_dark"
+    android:targetActivity=".MainActivity"/>
+🔥 2. FLUTTER PACKAGE
+android_dynamic_icon: ^0.0.5
+🔥 3. SERVICE YOZ
+import 'package:android_dynamic_icon/android_dynamic_icon.dart';
+
+class AppIconService {
+  static Future<void> changeToBlue() async {
+    await AndroidDynamicIcon.setAlternateIconName("MainActivityBlue");
+  }
+
+  static Future<void> changeToDark() async {
+    await AndroidDynamicIcon.setAlternateIconName("MainActivityDark");
+  }
+}
+🔥 4. UI GA QO‘SH (SENING SCREENDA)
+
+RadioListdan keyin qo‘sh:
+
+const SizedBox(height: 20),
+const Text("Ilova belgisi"),
+
+ListTile(
+  title: const Text("Ko‘k ikon"),
+  onTap: () async {
+    await AppIconService.changeToBlue();
+  },
+),
+
+ListTile(
+  title: const Text("Qora ikon"),
+  onTap: () async {
+    await AppIconService.changeToDark();
+  },
+),
+🎯 NATIJA
+
+✔ User icon tanlaydi
+✔ Home screen icon o‘zgaradi
+✔ Real app darajasi
+
+⚠️ MUHIM
+
+👉 iOS’da ham ishlaydi, lekin alohida sozlash kerak
+👉 Ba’zi Android telefonlarda restart kerak bo‘lishi mumkin
+
+🔥 SENIOR MASLAHAT
+
+Agar oddiyroq variant xohlasang:
+
+👉 App ichida avatar/icon preview qil
+👉 lekin launcher iconni o‘zgartirma

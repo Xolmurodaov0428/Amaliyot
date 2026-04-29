@@ -79,11 +79,19 @@ class _KundalikScreenState extends State<KundalikScreen> {
       return value;
     }
 
+    if (value.startsWith('/storage/')) {
+      return '$_siteBaseUrl$value';
+    }
+
+    if (value.startsWith('storage/')) {
+      return '$_siteBaseUrl/$value';
+    }
+
     if (value.startsWith('/')) {
       return '$_siteBaseUrl$value';
     }
 
-    return '$_siteBaseUrl/$value';
+    return '$_siteBaseUrl/storage/$value';
   }
 
   List<dynamic> _extractListData(dynamic data) {
@@ -851,8 +859,17 @@ class DailyTemplateModel {
     return DailyTemplateModel(
       id: _toInt(json['id']),
       title: (json['title'] ?? '').toString(),
-      fileUrl: (json['file_url'] ?? '').toString(),
-      originalName: (json['original_name'] ?? '').toString(),
+      fileUrl: (json['file_url'] ??
+          json['file'] ??
+          json['template_file'] ??
+          json['path'] ??
+          '')
+          .toString(),
+      originalName: (json['original_name'] ??
+          json['file_name'] ??
+          json['name'] ??
+          '')
+          .toString(),
       isActive: _toBool(json['is_active']),
     );
   }
@@ -1026,12 +1043,22 @@ class _ReportSheetState extends State<_ReportSheet> {
       allowMultiple: false,
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      withData: false,
     );
 
     if (!mounted) return;
 
     if (result != null && result.files.isNotEmpty) {
-      setState(() => _file = result.files.first);
+      final picked = result.files.first;
+
+      if (picked.path == null || picked.path!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fayl yo‘li topilmadi')),
+        );
+        return;
+      }
+
+      setState(() => _file = picked);
     }
   }
 

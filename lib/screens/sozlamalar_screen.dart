@@ -3,10 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_amaliyot_app/app/app.dart';
 import 'package:student_amaliyot_app/screens/profile_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/about_app_screen.dart';
+import 'package:student_amaliyot_app/screens/setting/appearance_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/connect_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/language_screen.dart';
+import 'package:student_amaliyot_app/screens/setting/notifications_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/security_screen.dart';
-
 import 'login_screen.dart';
 
 class SettingPage extends StatefulWidget {
@@ -118,22 +119,22 @@ class _SettingPageState extends State<SettingPage> {
                   showLanguageSheet(context);
                 },
               ),
-              _SettingTile(
-                icon: Icons.notifications_none_rounded,
-                iconColor: const Color(0xFFF4A261),
-                iconBg: const Color(0xFFFFF3E8),
-                title: 'Bildirishnomalar',
-                subtitle: 'Push va email xabarnomalar',
-                onTap: () {
-                  // NotificationsScreen ochiladi
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ContactScreen(),
-                    ),
-                  );
-                },
-              ),
+              // _SettingTile(
+              //   icon: Icons.notifications_none_rounded,
+              //   iconColor: const Color(0xFFF4A261),
+              //   iconBg: const Color(0xFFFFF3E8),
+              //   title: 'Bildirishnomalar',
+              //   subtitle: 'Push va email xabarnomalar',
+              //   onTap: () {
+              //     // NotificationsScreen ochiladi
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (_) => const NotificationScreen(),
+              //       ),
+              //     );
+              //   },
+              // ),
               _SettingTile(
                 icon: Icons.palette_outlined,
                 iconColor: const Color(0xFFE63946),
@@ -141,11 +142,10 @@ class _SettingPageState extends State<SettingPage> {
                 title: 'Ko\'rinish',
                 subtitle: 'Mavzu va rang sxemasi',
                 onTap: () {
-                  // AppearanceScreen ochiladi
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ContactScreen(),
+                      builder: (_) => const AppearanceScreen(), // ✅ TO‘G‘RI
                     ),
                   );
                 },
