@@ -346,9 +346,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                       onPick: () async {
                         final picked = await pickFile();
                         if (picked != null) {
-                          setLocalState(() {
-                            contractPath = picked;
-                          });
+                          setLocalState(() => contractPath = picked);
                         }
                       },
                     ),
@@ -359,9 +357,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                       onPick: () async {
                         final picked = await pickFile();
                         if (picked != null) {
-                          setLocalState(() {
-                            orderPath = picked;
-                          });
+                          setLocalState(() => orderPath = picked);
                         }
                       },
                     ),
@@ -377,10 +373,18 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                   onPressed: isSubmitting
                       ? null
                       : () async {
-                    if ((contractPath == null || contractPath!.isEmpty) &&
-                        (orderPath == null || orderPath!.isEmpty)) {
+                    if (contractPath == null ||
+                        contractPath!.trim().isEmpty) {
                       _showSnack(
-                        'Kamida bitta fayl tanlang.',
+                        'Shartnoma faylini tanlang.',
+                        isError: true,
+                      );
+                      return;
+                    }
+
+                    if (orderPath == null || orderPath!.trim().isEmpty) {
+                      _showSnack(
+                        'Buyruq faylini tanlang.',
                         isError: true,
                       );
                       return;
@@ -445,9 +449,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                       onPick: () async {
                         final picked = await pickFile();
                         if (picked != null) {
-                          setLocalState(() {
-                            contractPath = picked;
-                          });
+                          setLocalState(() => contractPath = picked);
                         }
                       },
                     ),
@@ -455,15 +457,12 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                     _FilePickBox(
                       title: 'Yangi buyruq fayli',
                       filePath: orderPath,
-                      currentFileName: doc.orderFile.isNotEmpty
-                          ? getFileName(doc.orderFile)
-                          : null,
+                      currentFileName:
+                      doc.orderFile.isNotEmpty ? getFileName(doc.orderFile) : null,
                       onPick: () async {
                         final picked = await pickFile();
                         if (picked != null) {
-                          setLocalState(() {
-                            orderPath = picked;
-                          });
+                          setLocalState(() => orderPath = picked);
                         }
                       },
                     ),
@@ -479,10 +478,18 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                   onPressed: isSubmitting
                       ? null
                       : () async {
-                    if ((contractPath == null || contractPath!.isEmpty) &&
-                        (orderPath == null || orderPath!.isEmpty)) {
+                    if (contractPath == null ||
+                        contractPath!.trim().isEmpty) {
                       _showSnack(
-                        'Yangilash uchun kamida bitta fayl tanlang.',
+                        'Yangi shartnoma faylini tanlang.',
+                        isError: true,
+                      );
+                      return;
+                    }
+
+                    if (orderPath == null || orderPath!.trim().isEmpty) {
+                      _showSnack(
+                        'Yangi buyruq faylini tanlang.',
                         isError: true,
                       );
                       return;
@@ -505,7 +512,6 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
       },
     );
   }
-
   Future<void> showDeleteDialog(StudentDocumentModel doc) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -757,13 +763,13 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Talaba ID: ${doc.studentId}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
-                ),
+                // Text(
+                //   'Talaba ID: ${doc.studentId}',
+                //   style: const TextStyle(
+                //     fontSize: 13,
+                //     color: Colors.black54,
+                //   ),
+                // ),
                 _buildFileCard(
                   title: 'Shartnoma',
                   filePath: doc.contractFile,
@@ -801,10 +807,11 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: isSubmitting ? null : showAddDocumentDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Qo‘shish'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
       ),
     );
   }

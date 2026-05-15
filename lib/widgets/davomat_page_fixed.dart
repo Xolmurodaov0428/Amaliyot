@@ -246,7 +246,7 @@ class _UzbekCalendarDialogState extends State<UzbekCalendarDialog> {
 
                 return InkWell(
                   borderRadius: BorderRadius.circular(100),
-                  onTap: () => Navigator.pop(context, date),
+                    onTap: () => Navigator.pop(context, date),
                   child: Container(
                     decoration: BoxDecoration(
                       color: isSelected
@@ -409,7 +409,7 @@ class _DavomatPageState extends State<DavomatPage> {
   bool is9amChecked = false;
   bool is1pmChecked = false;
   bool is4pmChecked = false;
-
+  
   // Normalize date to YMD
   DateTime selectedDate = DateTime(
     DateTime.now().year,
@@ -783,27 +783,27 @@ class _DavomatPageState extends State<DavomatPage> {
     if (!mounted) return false;
 
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Lokatsiya ogohlantirishi'),
-        content: Text(
-          'Siz tashkilot hududida emassiz.\n'
-              // 'Masofa: ${distanceMeters.toStringAsFixed(0)} metr.\n\n'
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Lokatsiya ogohlantirishi'),
+            content: Text(
+              'Siz tashkilot hududida emassiz.\n'
+              'Masofa: ${distanceMeters.toStringAsFixed(0)} metr.\n\n'
               'Davomat saqlansinmi?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo‘q'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Yo‘q'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Ha'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Ha'),
-          ),
-        ],
-      ),
-    ) ??
+        ) ??
         false;
   }
 
@@ -860,7 +860,7 @@ class _DavomatPageState extends State<DavomatPage> {
 
         final dynamic organizationRaw = studentMap?['organization'];
         final Map<String, dynamic>? organizationMap =
-        (organizationRaw is Map) ? Map<String, dynamic>.from(organizationRaw) : null;
+            (organizationRaw is Map) ? Map<String, dynamic>.from(organizationRaw) : null;
 
         if (organizationMap != null) {
           apiOrganizationLatitude = double.tryParse(
@@ -872,8 +872,8 @@ class _DavomatPageState extends State<DavomatPage> {
 
           // Backenddan radius odatda km ko‘rinishida keladi: 0.07 => 70 metr.
           final radiusKm = double.tryParse(
-            organizationMap['radius']?.toString() ?? '',
-          ) ??
+                organizationMap['radius']?.toString() ?? '',
+              ) ??
               0.07;
           apiOrganizationRadiusMeters = radiusKm * 1000;
         }
@@ -884,9 +884,9 @@ class _DavomatPageState extends State<DavomatPage> {
         int apiDailySessions = 3;
         if (studentMap != null) {
           apiDailySessions = int.tryParse(
-              studentMap['daily-sesions']?.toString() ??
-                  studentMap['daily_sessions']?.toString() ??
-                  '3'
+            studentMap['daily-sesions']?.toString() ??
+            studentMap['daily_sessions']?.toString() ??
+            '3'
           ) ?? 3;
         }
 
@@ -1084,7 +1084,7 @@ class _DavomatPageState extends State<DavomatPage> {
       }
 
       await _loadHistory();
-
+      
       // _loadHistory already handles loading state and syncing checked boxes.
     } on SocketException {
       if (mounted) {

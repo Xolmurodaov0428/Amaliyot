@@ -45,10 +45,32 @@ class _KundalikScreenState extends State<KundalikScreen> {
   }
 
   Future<void> _init() async {
-    await Future.wait([
-      _loadTemplates(),
-      _loadReports(),
-    ]);
+    await Future.wait([_loadTemplates(), _loadReports()]);
+  }
+
+  void _showTemplatePicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: _templates.map((t) {
+              return ListTile(
+                title: Text(t.title),
+                subtitle: Text(
+                  t.originalName.isEmpty ? 'Noma’lum fayl' : t.originalName,
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openSubmitSheet(t);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
   }
 
   Future<String?> _token() async {
@@ -148,9 +170,10 @@ class _KundalikScreenState extends State<KundalikScreen> {
         setState(() {
           _templates = items
               .whereType<Map>()
-              .map((e) => DailyTemplateModel.fromJson(
-            Map<String, dynamic>.from(e),
-          ))
+              .map(
+                (e) =>
+                    DailyTemplateModel.fromJson(Map<String, dynamic>.from(e)),
+              )
               .toList();
           _loadingTemplates = false;
         });
@@ -205,10 +228,12 @@ class _KundalikScreenState extends State<KundalikScreen> {
         setState(() {
           _reports = items
               .whereType<Map>()
-              .map((e) => StudentReportModel.fromJson(
-            Map<String, dynamic>.from(e),
-            fileBaseUrlBuilder: _buildFileUrl,
-          ))
+              .map(
+                (e) => StudentReportModel.fromJson(
+                  Map<String, dynamic>.from(e),
+                  fileBaseUrlBuilder: _buildFileUrl,
+                ),
+              )
               .toList();
           _loadingReports = false;
         });
@@ -229,10 +254,10 @@ class _KundalikScreenState extends State<KundalikScreen> {
   }
 
   Future<void> _createReport(
-      DailyTemplateModel template,
-      String note,
-      PlatformFile? file,
-      ) async {
+    DailyTemplateModel template,
+    String note,
+    PlatformFile? file,
+  ) async {
     if (mounted) {
       setState(() => _submitting = true);
     }
@@ -266,15 +291,11 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (file != null && file.path != null && file.path!.trim().isNotEmpty) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            'report_file',
+            'report_file_name', // ✅ Laravel kutayotgan field nomi
             file.path!,
             filename: file.name,
           ),
         );
-
-        request.fields['fields[1][field_key]'] = 'report_file_name';
-        request.fields['fields[1][field_label]'] = 'Fayl nomi';
-        request.fields['fields[1][field_value]'] = file.name;
       }
 
       final streamed = await request.send();
@@ -296,7 +317,9 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (response.statusCode == 422) {
         final errors = body['errors'];
         if (errors is Map) {
-          final firstValue = errors.values.isNotEmpty ? errors.values.first : null;
+          final firstValue = errors.values.isNotEmpty
+              ? errors.values.first
+              : null;
           if (firstValue is List && firstValue.isNotEmpty) {
             _show(firstValue.first.toString(), error: true);
             return;
@@ -321,10 +344,10 @@ class _KundalikScreenState extends State<KundalikScreen> {
   }
 
   Future<void> _updateReport(
-      StudentReportModel report,
-      String note,
-      PlatformFile? file,
-      ) async {
+    StudentReportModel report,
+    String note,
+    PlatformFile? file,
+  ) async {
     if (mounted) {
       setState(() => _submitting = true);
     }
@@ -358,15 +381,11 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (file != null && file.path != null && file.path!.trim().isNotEmpty) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            'report_file',
+            'report_file_name', // ✅ Laravel kutayotgan field nomi
             file.path!,
             filename: file.name,
           ),
         );
-
-        request.fields['fields[1][field_key]'] = 'report_file_name';
-        request.fields['fields[1][field_label]'] = 'Fayl nomi';
-        request.fields['fields[1][field_value]'] = file.name;
       }
 
       final streamed = await request.send();
@@ -381,7 +400,9 @@ class _KundalikScreenState extends State<KundalikScreen> {
       } else if (streamed.statusCode == 422) {
         final errors = body['errors'];
         if (errors is Map) {
-          final firstValue = errors.values.isNotEmpty ? errors.values.first : null;
+          final firstValue = errors.values.isNotEmpty
+              ? errors.values.first
+              : null;
           if (firstValue is List && firstValue.isNotEmpty) {
             _show(firstValue.first.toString(), error: true);
             return;
@@ -406,23 +427,24 @@ class _KundalikScreenState extends State<KundalikScreen> {
   }
 
   Future<void> _deleteReport(StudentReportModel report) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('O‘chirish'),
-        content: const Text('Haqiqatan ham o‘chirasizmi?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo‘q'),
+    final ok =
+        await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('O‘chirish'),
+            content: const Text('Haqiqatan ham o‘chirasizmi?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Yo‘q'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Ha'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Ha'),
-          ),
-        ],
-      ),
-    ) ??
+        ) ??
         false;
 
     if (!ok) return;
@@ -453,10 +475,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
         await _loadReports();
       } else {
         final body = _safeJsonMap(res.body);
-        _show(
-          body['message']?.toString() ?? 'O‘chirishda xato',
-          error: true,
-        );
+        _show(body['message']?.toString() ?? 'O‘chirishda xato', error: true);
       }
     } catch (e) {
       if (!mounted) return;
@@ -588,40 +607,59 @@ class _KundalikScreenState extends State<KundalikScreen> {
     final pageLoading = _submitting || _openingFile;
 
     return Scaffold(
+      floatingActionButton: pageLoading
+          ? null
+          : FloatingActionButton(
+              onPressed: _templates.isEmpty
+                  ? null
+                  : () {
+                      if (_templates.length == 1) {
+                        _openSubmitSheet(_templates.first);
+                      } else {
+                        _showTemplatePicker();
+                      }
+                    },
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.add, size: 30),
+            ),
+
       body: pageLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-        onRefresh: _init,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 16),
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 14, 12, 8),
-              child: Text(
-                'Shablon',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              onRefresh: _init,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 90),
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(12, 14, 12, 8),
+                    child: Text(
+                      'Shablon',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildTemplates(),
+
+                  const SizedBox(height: 16),
+
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: Text(
+                      'Mening kundaligim',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildReports(),
+                ],
               ),
             ),
-            _buildTemplates(),
-            const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
-              child: Text(
-                'Mening kundaliklarim',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            _buildReports(),
-          ],
-        ),
-      ),
     );
   }
 
@@ -656,19 +694,26 @@ class _KundalikScreenState extends State<KundalikScreen> {
             subtitle: Text(
               item.originalName.isEmpty ? 'Noma’lum fayl' : item.originalName,
             ),
-            trailing: Wrap(
-              spacing: 8,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.download),
-                  onPressed: item.fileUrl.isEmpty
-                      ? null
-                      : () => _openFile(item.fileUrl),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.upload_file),
-                  onPressed: item.isActive ? () => _openSubmitSheet(item) : null,
-                ),
+                // 📥 DOWNLOAD
+                if (item.fileUrl.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.download_rounded),
+                    tooltip: "Yuklab olish",
+                    onPressed: () => _openFile(item.fileUrl),
+                  ),
+
+                // 📤 UPLOAD (faqat shablon bo‘lsa)
+                // if (item.fileUrl.isNotEmpty)
+                //   IconButton(
+                //     icon: const Icon(Icons.upload_file),
+                //     tooltip: "Kundalik yuborish",
+                //     onPressed: item.isActive
+                //         ? () => _openSubmitSheet(item)
+                //         : null,
+                //   ),
               ],
             ),
           ),
@@ -717,9 +762,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        item.templateTitle.isEmpty
-                            ? 'Kundalik #${item.id}'
-                            : item.templateTitle,
+                        'Kundalik',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -728,8 +771,10 @@ class _KundalikScreenState extends State<KundalikScreen> {
                     ),
                     // Holat badge'ini ko'rsatamiz
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: item.statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
@@ -746,41 +791,63 @@ class _KundalikScreenState extends State<KundalikScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (item.note.isNotEmpty)
-                  Text(
-                    item.note,
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                if (item.submittedAt.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'Sana: ${item.submittedAt}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 🔹 NOTE + SANA (ikki chetda)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // CHAP — NOTE
+                        if (item.note.isNotEmpty)
+                          Expanded(
+                            child: Text(
+                              item.note,
+                              style: const TextStyle(color: Colors.black87),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+
+                        // O‘RTA BO‘SHLIK
+                        const SizedBox(width: 10),
+
+                        // O‘NG — SANA
+                        if (item.submittedAt.isNotEmpty)
+                          Text(
+                            'Sana: ${item.submittedAt}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                if (item.rejectReason.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Izoh: ${item.rejectReason}',
-                      style: const TextStyle(color: Colors.red, fontSize: 13),
-                    ),
-                  ),
-                ],
-                const Divider(height: 24),
-                if (item.templateFileUrl.isNotEmpty)
-                  _buildFileRow(
-                    icon: Icons.description_outlined,
-                    label: 'Shablon fayli',
-                    onOpen: () => _openFile(item.templateFileUrl),
-                  ),
+
+                    // 🔻 REJECT BLOK (pastda)
+                    if (item.rejectReason.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Izoh: ${item.rejectReason}',
+
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+
                 if (item.studentFileUrl.isNotEmpty)
                   _buildFileRow(
                     icon: Icons.attach_file,
@@ -795,12 +862,15 @@ class _KundalikScreenState extends State<KundalikScreen> {
                       TextButton.icon(
                         onPressed: () => _openEditSheet(item),
                         icon: const Icon(Icons.edit, size: 18),
-                        label: const Text('Tahrirlash'),
+                        label: const Text(''),
                       ),
                     if (canEditOrDelete) const SizedBox(width: 8),
                     if (canEditOrDelete)
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
                         onPressed: () => _deleteReport(item),
                       ),
                   ],
@@ -830,10 +900,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          TextButton(
-            onPressed: onOpen,
-            child: const Text('Ochish'),
-          ),
+          TextButton(onPressed: onOpen, child: const Text('Ochish')),
         ],
       ),
     );
@@ -859,17 +926,16 @@ class DailyTemplateModel {
     return DailyTemplateModel(
       id: _toInt(json['id']),
       title: (json['title'] ?? '').toString(),
-      fileUrl: (json['file_url'] ??
-          json['file'] ??
-          json['template_file'] ??
-          json['path'] ??
-          '')
-          .toString(),
-      originalName: (json['original_name'] ??
-          json['file_name'] ??
-          json['name'] ??
-          '')
-          .toString(),
+      fileUrl:
+          (json['file_url'] ??
+                  json['file'] ??
+                  json['template_file'] ??
+                  json['path'] ??
+                  '')
+              .toString(),
+      originalName:
+          (json['original_name'] ?? json['file_name'] ?? json['name'] ?? '')
+              .toString(),
       isActive: _toBool(json['is_active']),
     );
   }
@@ -941,9 +1007,9 @@ class StudentReportModel {
   }
 
   factory StudentReportModel.fromJson(
-      Map<String, dynamic> json, {
-        required String Function(String?) fileBaseUrlBuilder,
-      }) {
+    Map<String, dynamic> json, {
+    required String Function(String?) fileBaseUrlBuilder,
+  }) {
     final fieldsRaw = json['fields'];
     final List fields = fieldsRaw is List ? fieldsRaw : [];
 
@@ -961,9 +1027,10 @@ class StudentReportModel {
         }
 
         if ((key == 'file' ||
-            key == 'file_url' ||
-            key == 'report_file' ||
-            key == 'student_file') &&
+                key == 'file_url' ||
+                key == 'report_file' ||
+                key == 'report_file_name' ||
+                key == 'student_file') &&
             value.trim().isNotEmpty) {
           uploadedFileUrl = fileBaseUrlBuilder(value);
         }
@@ -975,17 +1042,21 @@ class StudentReportModel {
         ? templateRaw
         : (templateRaw is Map ? Map<String, dynamic>.from(templateRaw) : null);
 
-    final directStudentFileUrl = fileBaseUrlBuilder(json['file_url']?.toString());
-    final nestedStudentFileUrl =
-    fileBaseUrlBuilder(json['report_file_url']?.toString());
+    final directStudentFileUrl = fileBaseUrlBuilder(
+      json['file_url']?.toString(),
+    );
+    final nestedStudentFileUrl = fileBaseUrlBuilder(
+      json['report_file_url']?.toString(),
+    );
     final templateFile = fileBaseUrlBuilder(template?['file_url']?.toString());
 
     // Status parsing (status ?? state ?? 'pending')
-    final statusValue = (json['status'] ?? json['state'] ?? 'pending').toString();
+    final statusValue = (json['status'] ?? json['state'] ?? 'pending')
+        .toString();
 
     // submittedAt parsing (submitted_at ?? created_at ?? '')
-    final submittedAtValue =
-        (json['submitted_at'] ?? json['created_at'] ?? '').toString();
+    final submittedAtValue = (json['submitted_at'] ?? json['created_at'] ?? '')
+        .toString();
 
     // rejectReason parsing (supervisor_comment ?? reject_reason ?? '')
     final rejectReasonValue =
@@ -1003,8 +1074,8 @@ class StudentReportModel {
       studentFileUrl: uploadedFileUrl.isNotEmpty
           ? uploadedFileUrl
           : (nestedStudentFileUrl.isNotEmpty
-              ? nestedStudentFileUrl
-              : directStudentFileUrl),
+                ? nestedStudentFileUrl
+                : directStudentFileUrl),
     );
   }
 }
@@ -1013,10 +1084,7 @@ class _ReportSheet extends StatefulWidget {
   final String title;
   final String initialNote;
 
-  const _ReportSheet({
-    required this.title,
-    this.initialNote = '',
-  });
+  const _ReportSheet({required this.title, this.initialNote = ''});
 
   @override
   State<_ReportSheet> createState() => _ReportSheetState();
@@ -1034,8 +1102,35 @@ class _ReportSheetState extends State<_ReportSheet> {
 
   @override
   void dispose() {
+    // ScaffoldMessenger.of(context).clearMaterialBanners();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _showTopMessage(String text) {
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.clearMaterialBanners();
+
+    messenger.showMaterialBanner(
+      MaterialBanner(
+        content: Text(text),
+        backgroundColor: Colors.red,
+        actions: [
+          TextButton(
+            onPressed: () {
+              messenger.removeCurrentMaterialBanner();
+            },
+            child: const Text("Yopish"),
+          ),
+        ],
+      ),
+    );
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      messenger.clearMaterialBanners(); // ✅ shu yerda tozalansin
+    });
   }
 
   Future<void> _pick() async {
@@ -1052,9 +1147,9 @@ class _ReportSheetState extends State<_ReportSheet> {
       final picked = result.files.first;
 
       if (picked.path == null || picked.path!.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fayl yo‘li topilmadi')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Fayl yo‘li topilmadi')));
         return;
       }
 
@@ -1090,13 +1185,8 @@ class _ReportSheetState extends State<_ReportSheet> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: Text(_file?.name ?? 'Fayl tanlanmagan'),
-              ),
-              TextButton(
-                onPressed: _pick,
-                child: const Text('Fayl tanlash'),
-              ),
+              Expanded(child: Text(_file?.name ?? 'Fayl tanlanmagan')),
+              TextButton(onPressed: _pick, child: const Text('Fayl tanlash')),
             ],
           ),
           const SizedBox(height: 12),
@@ -1104,13 +1194,23 @@ class _ReportSheetState extends State<_ReportSheet> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(
-                  context,
-                  _SheetResult(
-                    note: _controller.text.trim(),
-                    file: _file,
-                  ),
-                );
+                final note = _controller.text.trim();
+
+                if (_file == null) {
+                  _showTopMessage("Fayl tanlanishi shart");
+                  return;
+                }
+                if (note.length > 35) {
+                  _showTopMessage("Izoh 35 ta belgidan ko'p bo‘lmasligi kerak");
+                  return;
+                }
+
+                if (_file == null) {
+                  _showTopMessage("Fayl tanlanishi shart");
+                  return;
+                }
+
+                Navigator.pop(context, _SheetResult(note: note, file: _file));
               },
               child: const Text('Saqlash'),
             ),
@@ -1125,10 +1225,7 @@ class _SheetResult {
   final String note;
   final PlatformFile? file;
 
-  _SheetResult({
-    required this.note,
-    required this.file,
-  });
+  _SheetResult({required this.note, required this.file});
 }
 
 int _toInt(dynamic value) {

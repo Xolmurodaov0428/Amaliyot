@@ -268,74 +268,72 @@ class _SecurityScreenState extends State<SecurityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const CustomAppBar(title: 'Xavfsizlik'),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _SecurityCard(
-                      icon: Icons.lock_reset_rounded,
-                      iconBg: const Color(0xFFE0F2FE),
-                      iconColor: const Color(0xFF0284C7),
-                      title: 'Parolni o‘zgartirish',
-                      subtitle: 'Eski parol orqali yangi parol yarating',
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: _showChangePasswordSheet,
-                    ),
-                    const SizedBox(height: 12),
+      body: Column(
+        children: [
+          const CustomAppBar(title: 'Xavfsizlik'),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _SecurityCard(
+                    icon: Icons.lock_reset_rounded,
+                    iconBg: const Color(0xFFE0F2FE),
+                    iconColor: const Color(0xFF0284C7),
+                    title: 'Parolni o‘zgartirish',
+                    subtitle: 'Eski parol orqali yangi parol yarating',
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: _showChangePasswordSheet,
+                  ),
+                  const SizedBox(height: 12),
 
-                    _SecurityCard(
-                      icon: Icons.pin_rounded,
-                      iconBg: const Color(0xFFEDE9FE),
-                      iconColor: const Color(0xFF7C3AED),
-                      title: 'PIN kod',
-                      subtitle: _pinEnabled
-                          ? 'Ilova PIN bilan himoyalangan'
-                          : 'Ilova ochilganda 4 xonali PIN so‘ralsin',
-                      trailing: Switch(
-                        value: _pinEnabled,
-                        onChanged: (value) {
-                          if (value) {
-                            _showPinSheet();
-                          } else {
-                            _removePin();
-                          }
-                        },
-                      ),
+                  _SecurityCard(
+                    icon: Icons.pin_rounded,
+                    iconBg: const Color(0xFFEDE9FE),
+                    iconColor: const Color(0xFF7C3AED),
+                    title: 'PIN kod',
+                    subtitle: _pinEnabled
+                        ? 'Ilova PIN bilan himoyalangan'
+                        : 'Ilova ochilganda 4 xonali PIN so‘ralsin',
+                    trailing: Switch(
+                      value: _pinEnabled,
+                      onChanged: (value) {
+                        if (value) {
+                          _showPinSheet();
+                        } else {
+                          _removePin();
+                        }
+                      },
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 12),
 
-                    _SecurityCard(
-                      icon: Icons.fingerprint_rounded,
-                      iconBg: const Color(0xFFDCFCE7),
-                      iconColor: const Color(0xFF16A34A),
-                      title: 'Biometrik kirish',
-                      subtitle: 'Barmoq izi yoki FaceID orqali kirish',
-                      trailing: Switch(
-                        value: _biometricEnabled,
-                        onChanged: _toggleBiometric,
-                      ),
+                  _SecurityCard(
+                    icon: Icons.fingerprint_rounded,
+                    iconBg: const Color(0xFFDCFCE7),
+                    iconColor: const Color(0xFF16A34A),
+                    title: 'Biometrik kirish',
+                    subtitle: 'Barmoq izi yoki FaceID orqali kirish',
+                    trailing: Switch(
+                      value: _biometricEnabled,
+                      onChanged: _toggleBiometric,
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 12),
 
-                    _SecurityCard(
-                      icon: Icons.info_outline_rounded,
-                      iconBg: const Color(0xFFFFF7ED),
-                      iconColor: const Color(0xFFF97316),
-                      title: 'Xavfsizlik eslatmasi',
-                      subtitle:
-                      'Parolni hech kimga bermang. Umumiy qurilmada “Eslab qolish”ni yoqmang.',
-                    ),
-                  ],
-                ),
+                  _SecurityCard(
+                    icon: Icons.info_outline_rounded,
+                    iconBg: const Color(0xFFFFF7ED),
+                    iconColor: const Color(0xFFF97316),
+                    title: 'Xavfsizlik eslatmasi',
+                    subtitle:
+                    'Parolni hech kimga bermang. Umumiy qurilmada “Eslab qolish”ni yoqmang.',
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

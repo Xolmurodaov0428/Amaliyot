@@ -1,0 +1,135 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <clipPath id="circ"><circle cx="256" cy="256" r="256"/></clipPath>
+
+  <radialGradient id="bgMain" cx="38%" cy="32%" r="75%">
+    <stop offset="0%" stop-color="#1a5fcc"/>
+    <stop offset="45%" stop-color="#0a2f88"/>
+    <stop offset="100%" stop-color="#030e2a"/>
+  </radialGradient>
+
+  <radialGradient id="glowTop" cx="35%" cy="28%" r="55%">
+    <stop offset="0%" stop-color="#4488ff" stop-opacity="0.55"/>
+    <stop offset="100%" stop-color="#4488ff" stop-opacity="0"/>
+  </radialGradient>
+
+  <radialGradient id="glowBottom" cx="75%" cy="70%" r="45%">
+    <stop offset="0%" stop-color="#003399" stop-opacity="0.6"/>
+    <stop offset="100%" stop-color="#003399" stop-opacity="0"/>
+  </radialGradient>
+
+  <radialGradient id="shine" cx="35%" cy="22%" r="50%">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.20"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+
+  <radialGradient id="dotO" cx="30%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#ffcc55"/>
+    <stop offset="100%" stop-color="#ff8800"/>
+  </radialGradient>
+  <radialGradient id="dotG" cx="30%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#88ffdd"/>
+    <stop offset="100%" stop-color="#00bbaa"/>
+  </radialGradient>
+  <radialGradient id="dotP" cx="30%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#cc88ff"/>
+    <stop offset="100%" stop-color="#8800dd"/>
+  </radialGradient>
+  <radialGradient id="dotC" cx="30%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#aaddff"/>
+    <stop offset="100%" stop-color="#2299ff"/>
+  </radialGradient>
+
+  <filter id="gf"><feGaussianBlur stdDeviation="32"/></filter>
+</defs>
+
+<g clip-path="url(#circ)">
+
+  <!-- Base -->
+  <rect width="512" height="512" fill="url(#bgMain)"/>
+
+  <!-- Glows -->
+  <ellipse cx="185" cy="185" rx="195" ry="185" fill="url(#glowTop)" filter="url(#gf)"/>
+  <ellipse cx="360" cy="330" rx="170" ry="155" fill="url(#glowBottom)" filter="url(#gf)"/>
+
+  <!-- Stars -->
+  <circle cx="58" cy="45" r="1.8" fill="#ffffff" fill-opacity="0.7"/>
+  <circle cx="140" cy="28" r="1.2" fill="#ffffff" fill-opacity="0.55"/>
+  <circle cx="210" cy="55" r="1.8" fill="#ffffff" fill-opacity="0.5"/>
+  <circle cx="355" cy="38" r="1.2" fill="#ffffff" fill-opacity="0.65"/>
+  <circle cx="430" cy="65" r="2.2" fill="#ffffff" fill-opacity="0.6"/>
+  <circle cx="475" cy="28" r="1.2" fill="#ffffff" fill-opacity="0.45"/>
+  <circle cx="488" cy="108" r="1.8" fill="#ffffff" fill-opacity="0.55"/>
+  <circle cx="38" cy="160" r="1.2" fill="#ffffff" fill-opacity="0.4"/>
+  <circle cx="72" cy="435" r="1.8" fill="#ffffff" fill-opacity="0.35"/>
+  <circle cx="460" cy="455" r="1.2" fill="#ffffff" fill-opacity="0.4"/>
+  <circle cx="495" cy="395" r="1.8" fill="#ffffff" fill-opacity="0.5"/>
+  <circle cx="28" cy="360" r="1.2" fill="#ffffff" fill-opacity="0.35"/>
+  <circle cx="310" cy="480" r="1.5" fill="#ffffff" fill-opacity="0.3"/>
+  <circle cx="160" cy="470" r="1" fill="#ffffff" fill-opacity="0.35"/>
+
+  <!-- Shine -->
+  <circle cx="256" cy="256" r="256" fill="url(#shine)"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.15"/>
+
+  <!-- ===== GRADUATION CAP ===== -->
+  <polygon points="256,105 385,162 256,219 127,162"
+    fill="none" stroke="#ffffff" stroke-width="10"
+    stroke-linejoin="round" stroke-linecap="round"/>
+
+  <path d="M 172,175 L 172,258 Q 172,286 256,299 Q 340,286 340,258 L 340,175"
+    fill="none" stroke="#ffffff" stroke-width="10"
+    stroke-linejoin="round" stroke-linecap="round"/>
+
+  <line x1="172" y1="175" x2="172" y2="262"
+    stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+  <circle cx="172" cy="271" r="14"
+    fill="none" stroke="#ffffff" stroke-width="7"/>
+
+  <line x1="165" y1="285" x2="155" y2="320" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="172" y1="285" x2="172" y2="322" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="179" y1="285" x2="189" y2="320" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Checklist card -->
+  <rect x="216" y="312" width="96" height="72" rx="11"
+    fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-width="4.5" stroke-opacity="0.65"/>
+  <rect x="226" y="323" width="15" height="15" rx="3.5"
+    fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-width="2.5"/>
+  <polyline points="228,331 232,335 238,325"
+    fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="247" y="327" width="56" height="6" rx="3" fill="#ffffff" fill-opacity="0.5"/>
+  <rect x="226" y="343" width="15" height="15" rx="3.5"
+    fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-width="2.5"/>
+  <polyline points="228,351 232,355 238,345"
+    fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="247" y="347" width="44" height="6" rx="3" fill="#ffffff" fill-opacity="0.5"/>
+  <rect x="226" y="363" width="15" height="15" rx="3.5"
+    fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-width="2.5"/>
+  <rect x="247" y="367" width="52" height="6" rx="3" fill="#ffffff" fill-opacity="0.25"/>
+
+  <!-- AMALIYOT -->
+  <text x="256" y="428"
+    text-anchor="middle"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="38" font-weight="900"
+    letter-spacing="5"
+    fill="#ffffff" fill-opacity="0.96">AMALIYOT</text>
+
+  <!-- Floating dots -->
+  <circle cx="408" cy="112" r="22" fill="url(#dotO)"/>
+  <circle cx="400" cy="104" r="8" fill="#ffffff" fill-opacity="0.28"/>
+
+  <circle cx="442" cy="310" r="13" fill="url(#dotG)"/>
+  <circle cx="438" cy="305" r="4.5" fill="#ffffff" fill-opacity="0.25"/>
+
+  <circle cx="96" cy="390" r="26" fill="url(#dotP)"/>
+  <circle cx="88" cy="382" r="9" fill="#ffffff" fill-opacity="0.22"/>
+
+  <circle cx="108" cy="128" r="12" fill="url(#dotC)"/>
+  <circle cx="104" cy="124" r="4" fill="#ffffff" fill-opacity="0.3"/>
+
+  <circle cx="405" cy="420" r="10" fill="url(#dotO)" fill-opacity="0.75"/>
+
+</g>
+</svg>

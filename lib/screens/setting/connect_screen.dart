@@ -20,108 +20,106 @@ class ContactScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const CustomAppBar(title: "Bog‘lanish"),
+      body: Column(
+        children: [
+          const CustomAppBar(title: "Bog‘lanish"),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(18),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 22,
-                        offset: const Offset(0, 8),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(18),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 22,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "📞 Bog‘lanish",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "📞 Bog‘lanish",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF111827),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Savollar, texnik muammolar yoki takliflar bo‘yicha murojaat qilishingiz mumkin.",
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.6,
+                        color: Color(0xFF4B5563),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+
+                    const _ContactItem(
+                      icon: Icons.person_rounded,
+                      title: "Mas’ul",
+                      value: "Shahzod Xolmurodov",
+                    ),
+                    _ContactItem(
+                      icon: Icons.telegram,
+                      title: "Telegram",
+                      value: "t.me/XolmurodovShahzod",
+                      onTap: () => _openUrl("https://t.me/XolmurodovShahzod"),
+                    ),
+                    _ContactItem(
+                      icon: Icons.phone_rounded,
+                      title: "Telefon",
+                      value: "+998 XX XXX XX XX",
+                      onTap: () => _openUrl("tel:+998XXXXXXXXX"),
+                    ),
+                    _ContactItem(
+                      icon: Icons.email_rounded,
+                      title: "Email",
+                      value: "support@example.com",
+                      onTap: () => _openUrl("mailto:support@example.com"),
+                    ),
+
+
+                    const SizedBox(height: 22),
+                    const Text(
+                      "💬 Murojaat mavzulari",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const _TopicItem("Login yoki parol muammosi"),
+                    const _TopicItem("Topshiriqlar ko‘rinmasligi"),
+                    const _TopicItem("Davomat xatoligi"),
+                    const _TopicItem("Hujjat yuklash muammosi"),
+                    const _TopicItem("Ilova bo‘yicha takliflar"),
+
+                    const SizedBox(height: 28),
+                    Center(
+                      child: Text(
+                        "© $currentYear Amaliyot tizimi",
+                        style: const TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Savollar, texnik muammolar yoki takliflar bo‘yicha murojaat qilishingiz mumkin.",
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.6,
-                          color: Color(0xFF4B5563),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-
-                      const _ContactItem(
-                        icon: Icons.person_rounded,
-                        title: "Mas’ul",
-                        value: "Shahzod Xolmurodov",
-                      ),
-                      _ContactItem(
-                        icon: Icons.telegram,
-                        title: "Telegram",
-                        value: "t.me/XolmurodovShahzod",
-                        onTap: () => _openUrl("https://t.me/XolmurodovShahzod"),
-                      ),
-                      _ContactItem(
-                        icon: Icons.phone_rounded,
-                        title: "Telefon",
-                        value: "+998 XX XXX XX XX",
-                        onTap: () => _openUrl("tel:+998XXXXXXXXX"),
-                      ),
-                      _ContactItem(
-                        icon: Icons.email_rounded,
-                        title: "Email",
-                        value: "support@example.com",
-                        onTap: () => _openUrl("mailto:support@example.com"),
-                      ),
-
-
-                      const SizedBox(height: 22),
-                      const Text(
-                        "💬 Murojaat mavzulari",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 17,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const _TopicItem("Login yoki parol muammosi"),
-                      const _TopicItem("Topshiriqlar ko‘rinmasligi"),
-                      const _TopicItem("Davomat xatoligi"),
-                      const _TopicItem("Hujjat yuklash muammosi"),
-                      const _TopicItem("Ilova bo‘yicha takliflar"),
-
-                      const SizedBox(height: 28),
-                      Center(
-                        child: Text(
-                          "© $currentYear Amaliyot tizimi",
-                          style: const TextStyle(
-                            color: Color(0xFF9CA3AF),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

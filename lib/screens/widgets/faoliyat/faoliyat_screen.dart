@@ -54,7 +54,7 @@ class FaoliyatPage extends StatelessWidget {
                     tabs: const [
                       Tab(text: "Kundalik"),
                       Tab(text: "Hujjatlar"),
-                      Tab(text: "Rasimlar"),
+                      // Tab(text: "Rasimlar"),
                     ],
                   ),
                 ),
@@ -70,7 +70,7 @@ class FaoliyatPage extends StatelessWidget {
                   children: [
                     KundalikScreen(),
                     ShartnomaScreen(),
-                    RasimlarScreen(),
+                    // RasimlarScreen(),
                   ],
                 ),
               ),

@@ -62,7 +62,7 @@ class TapBarPage extends StatelessWidget {
                   Tab(icon: Icon(Icons.home), text: "Bosh sahifa"),
                   Tab(icon: Icon(Icons.assignment), text: "Topshiriqlar"),
                   Tab(icon: Icon(Icons.calendar_today), text: "Davomat"),
-                  Tab(icon: Icon(Icons.camera_alt), text: "Hujjatlar"),
+                  Tab(icon: Icon(Icons.create_new_folder_outlined), text: "Hujjatlar"),
                   Tab(icon: Icon(Icons.settings), text: "Sozlamalar"),
                 ],
               ),
