@@ -30,7 +30,7 @@ class NetworkException implements Exception {
 class ParseException implements Exception {
   final String message;
 
-  const ParseException([this.message = 'Javobni o‘qishda xato.']);
+  const ParseException([this.message = "Javobni o'qishda xato."]);
 
   @override
   String toString() => 'ParseException: $message';
@@ -156,7 +156,7 @@ class ApiService {
       }
       throw const ParseException('Server javobi obyekt formatida emas.');
     } on FormatException {
-      throw const ParseException('Serverdan noto‘g‘ri JSON keldi.');
+      throw const ParseException("Serverdan noto'g'ri JSON keldi.");
     }
   }
 
@@ -186,7 +186,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw ApiException(
         401,
-        _extractMessage(map, fallback: 'Login yoki parol noto‘g‘ri.'),
+        _extractMessage(map, fallback: "Login yoki parol noto'g'ri."),
       );
     }
 
@@ -205,7 +205,7 @@ class ApiService {
       );
     }
 
-    // Backend’da token root level’da keladi: map['token']
+    // Backend'da token root level'da keladi: map['token']
     final String? token = map['token']?.toString();
 
     // Student ma'lumotlari map['data']['student'] ichida keladi
@@ -319,13 +319,13 @@ class ApiService {
         }
       }
 
-      throw const ParseException('Studentlar ro‘yxati topilmadi.');
+      throw const ParseException("Studentlar ro'yxati topilmadi.");
     } on ParseException {
       rethrow;
     } on FormatException {
-      throw const ParseException('Studentlar javobi noto‘g‘ri formatda.');
+      throw const ParseException("Studentlar javobi noto'g'ri formatda.");
     } catch (_) {
-      throw const ParseException('Studentlar ro‘yxatini o‘qishda xato.');
+      throw const ParseException("Studentlar ro'yxatini o'qishda xato.");
     }
   }
 
@@ -364,17 +364,17 @@ class ApiService {
         final map = _decodeToMap(response.body);
         throw ApiException(
           response.statusCode,
-          _extractMessage(map, fallback: 'So‘rov xatosi.'),
+          _extractMessage(map, fallback: "So'rov xatosi."),
         );
       } on ParseException {
-        throw ApiException(response.statusCode, 'So‘rov xatosi.');
+        throw ApiException(response.statusCode, "So'rov xatosi.");
       }
     }
 
     try {
       return jsonDecode(response.body);
     } on FormatException {
-      throw const ParseException('Javobni o‘qishda xato.');
+      throw const ParseException("Javobni o'qishda xato.");
     }
   }
 }

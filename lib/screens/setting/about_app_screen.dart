@@ -11,11 +11,10 @@ class AboutAppScreen extends StatelessWidget {
     final currentYear = DateTime.now().year;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CustomAppBar(title: "Bog‘lanish"),
+          const CustomAppBar(title: "Ilova haqida"),
 
           Expanded(
             child: SingleChildScrollView(
@@ -24,11 +23,11 @@ class AboutAppScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
@@ -49,7 +48,6 @@ class AboutAppScreen extends StatelessWidget {
                           child: Text(
                             "Amaliyot tizimi",
                             style: TextStyle(
-                              color: Color(0xFF111827),
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
@@ -67,23 +65,23 @@ class AboutAppScreen extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    const _SectionTitle("📌 Ilova maqsadi"),
+                    const _SectionTitle("Ilova maqsadi"),
                     const _InfoText(
                       "Ushbu ilova talabalar amaliyot jarayonini raqamlashtirish, nazorat qilish va qulay boshqarish uchun yaratilgan.",
                     ),
 
                     const SizedBox(height: 16),
 
-                    const _SectionTitle("🎓 Talaba imkoniyatlari"),
-                    const _TechItem("Profil ma’lumotlarini ko‘rish"),
+                    const _SectionTitle("Talaba imkoniyatlari"),
+                    const _TechItem("Profil ma'lumotlarini ko'rish"),
                     const _TechItem("Amaliyot muddati va faol kunlarni kuzatish"),
                     const _TechItem("Davomat holatini tekshirish"),
-                    const _TechItem("Topshiriqlarni ko‘rish va bajarish"),
-                    const _TechItem("Hujjatlarni yuklash va ko‘rish"),
+                    const _TechItem("Topshiriqlarni ko'rish va bajarish"),
+                    const _TechItem("Hujjatlarni yuklash va ko'rish"),
 
                     const SizedBox(height: 16),
 
-                    const _SectionTitle("⚙️ Texnologiyalar"),
+                    const _SectionTitle("Texnologiyalar"),
                     const _TechItem("Flutter"),
                     const _TechItem("Laravel"),
                     const _TechItem("MySQL"),
@@ -120,8 +118,8 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Color(0xFF111827),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 15,
         fontWeight: FontWeight.bold,
       ),
@@ -138,8 +136,8 @@ class _InfoText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Color(0xFF374151),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontSize: 14,
         height: 1.6,
       ),
@@ -168,8 +166,8 @@ class _TechItem extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: Color(0xFF374151),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 14,
                 height: 1.4,
               ),

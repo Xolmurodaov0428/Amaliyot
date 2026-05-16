@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
-import '../../widgets/dashboard_page.dart'; // misol uchun
 
 class RouteName {
   static const String home = '/home';

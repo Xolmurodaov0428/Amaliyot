@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -90,15 +88,10 @@ class AppConstants {
 // DESIGN TOKENS
 // ─────────────────────────────────────────────
 
-class AppColors {
-  static const darkBg      = Color(0xFFF8FAFC);
-  static const darkSurface = Color(0xFFFFFFFF);
-  static const darkCard    = Color(0xFFF1F5F9);
-  static const darkBorder  = Color(0xFFE2E8F0);
+class _TColors {
   static const darkSubtext = Color(0xFF64748B);
   static const accent      = Color(0xFF2D7DD2);
   static const accentLight = Color(0xFF5B9FE8);
-  static const pageBg      = Color(0xFFF1F5F9);
   static const green       = Color(0xFF16A34A);
   static const greenBg     = Color(0xFFDCFCE7);
   static const amber       = Color(0xFFF59E0B);
@@ -206,7 +199,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     }
 
     try {
-      _showSnack('Fayl yuklab olinmoqda...', AppColors.accent);
+      _showSnack('Fayl yuklab olinmoqda...', _TColors.accent);
 
       final completer = Completer<String?>();
 
@@ -219,7 +212,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
           debugPrint('Downloading $name: ${progress.toStringAsFixed(0)}%');
         },
         onDownloadCompleted: (path) {
-          _showSnack('Fayl yuklab olindi ✅', AppColors.green);
+          _showSnack('Fayl yuklab olindi ✅', _TColors.green);
           completer.complete(path);
         },
         onDownloadError: (err) {
@@ -382,7 +375,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
 
       if (file != null) {
         if (file.bytes == null || file.bytes!.isEmpty) {
-          _showSnack('Fayl bytes topilmadi yoki bo\'sh.', Colors.red);
+          _showSnack("Fayl bytes topilmadi yoki bo'sh.", Colors.red);
           return;
         }
         request.files.add(
@@ -405,7 +398,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
       switch (response.statusCode) {
         case 200:
         case 201:
-          _showSnack('Topshiriq muvaffaqiyatli yuborildi ✅', AppColors.green);
+          _showSnack('Topshiriq muvaffaqiyatli yuborildi ✅', _TColors.green);
           await _loadTasks();
         case 401:
           _showSnack('Sessiya tugagan. Qayta login qiling.', Colors.red);
@@ -494,7 +487,6 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
       body: _buildBody(),
     );
   }
@@ -502,7 +494,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.accent),
+        child: CircularProgressIndicator(color: _TColors.accent),
       );
     }
 
@@ -513,7 +505,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -553,7 +545,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                 FilledButton.icon(
                   onPressed: _loadTasks,
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: _TColors.accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -634,7 +626,7 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
     }).length;
 
     return RefreshIndicator(
-      color: AppColors.accent,
+      color: _TColors.accent,
       onRefresh: _loadTasks,
       child: CustomScrollView(
         slivers: [
@@ -643,13 +635,13 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 4),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Topshiriqlar',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -660,13 +652,13 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.12),
+                      color: _TColors.accent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       '${_tasks.length} ta',
                       style: const TextStyle(
-                        color: AppColors.accent,
+                        color: _TColors.accent,
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),
@@ -684,16 +676,16 @@ class _TopshiriqlarPageState extends State<TopshiriqlarPage> {
                   _StatChip(
                     label: 'Topshirildi',
                     count: submittedCount,
-                    color: AppColors.green,
-                    bg: AppColors.greenBg,
+                    color: _TColors.green,
+                    bg: _TColors.greenBg,
                     icon: Icons.check_circle_rounded,
                   ),
                   const SizedBox(width: 10),
                   _StatChip(
                     label: 'Kutilmoqda',
                     count: pendingCount,
-                    color: AppColors.amber,
-                    bg: AppColors.amberBg,
+                    color: _TColors.amber,
+                    bg: _TColors.amberBg,
                     icon: Icons.schedule_rounded,
                   ),
                   const SizedBox(width: 10),
@@ -822,11 +814,11 @@ class _SimpleTaskCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isUrgent
-              ? AppColors.amber.withValues(alpha: 0.5)
+              ? _TColors.amber.withValues(alpha: 0.5)
               : const Color(0xFFE2E8F0),
           width: 1.2,
         ),
@@ -863,7 +855,7 @@ class _SimpleTaskCard extends StatelessWidget {
                       height: 32,
                       margin: const EdgeInsets.only(right: 10, top: 1),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.1),
+                        color: _TColors.accent.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -872,7 +864,7 @@ class _SimpleTaskCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.accent,
+                            color: _TColors.accent,
                           ),
                         ),
                       ),
@@ -885,10 +877,10 @@ class _SimpleTaskCard extends StatelessWidget {
                             task.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
+                              color: Theme.of(context).colorScheme.onSurface,
                               height: 1.3,
                             ),
                           ),
@@ -934,7 +926,7 @@ class _SimpleTaskCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                Divider(height: 1, color: Theme.of(context).dividerColor),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -962,7 +954,7 @@ class _SimpleTaskCard extends StatelessWidget {
                     icon: Icons.star_rounded,
                     label: 'Ball',
                     value: task.score!,
-                    iconColor: AppColors.amber,
+                    iconColor: _TColors.amber,
                   ),
                 ],
                 const SizedBox(height: 14),
@@ -972,7 +964,7 @@ class _SimpleTaskCard extends StatelessWidget {
                   child: FilledButton(
                     onPressed: onViewTask,
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: _TColors.accent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -1005,9 +997,9 @@ class _SimpleTaskCard extends StatelessWidget {
                     task.createdAt != null
                         ? 'Berilgan: ${formatDate(task.createdAt)}'
                         : '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFFCBD5E1),
+                      color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                   ),
                 ),
@@ -1042,7 +1034,7 @@ class _MetaItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveColor =
-    urgent ? AppColors.amber : (iconColor ?? const Color(0xFF94A3B8));
+    urgent ? _TColors.amber : (iconColor ?? const Color(0xFF94A3B8));
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1060,7 +1052,7 @@ class _MetaItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: urgent ? AppColors.amber : const Color(0xFF374151),
+                color: urgent ? _TColors.amber : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -1254,9 +1246,9 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.88,
-      decoration: const BoxDecoration(
-        color: AppColors.darkBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(
         top: false,
@@ -1269,7 +1261,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.darkBorder,
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -1287,12 +1279,12 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.darkCard,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Color(0xFF374151),
+                        color: Theme.of(context).colorScheme.onSurface,
                         size: 16,
                       ),
                     ),
@@ -1304,8 +1296,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       children: [
                         Text(
                           widget.task.supervisorName ?? 'Rahbar',
-                          style: const TextStyle(
-                            color: Color(0xFF0F172A),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -1314,7 +1306,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           Text(
                             widget.task.groupName!,
                             style: const TextStyle(
-                              color: AppColors.darkSubtext,
+                              color: _TColors.darkSubtext,
                               fontSize: 12,
                             ),
                           ),
@@ -1366,13 +1358,13 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                   ),
                   decoration: BoxDecoration(
                     color: isExpired
-                        ? const Color(0xFFFEE2E2)
-                        : const Color(0xFFF0F9FF),
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : _TColors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isExpired
                           ? Colors.red.withValues(alpha: 0.3)
-                          : AppColors.accent.withValues(alpha: 0.3),
+                          : _TColors.accent.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -1384,7 +1376,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                         size: 15,
                         color: isExpired
                             ? Colors.redAccent
-                            : AppColors.accent,
+                            : _TColors.accent,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -1395,7 +1387,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           fontSize: 12,
                           color: isExpired
                               ? Colors.redAccent
-                              : AppColors.darkSubtext,
+                              : _TColors.darkSubtext,
                         ),
                       ),
                       Expanded(
@@ -1406,7 +1398,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                             fontWeight: FontWeight.w600,
                             color: isExpired
                                 ? Colors.redAccent
-                                : const Color(0xFF0F172A),
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -1431,8 +1423,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           children: [
                             Text(
                               widget.task.title,
-                              style: const TextStyle(
-                                color: Color(0xFF0F172A),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                               ),
@@ -1442,8 +1434,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                               const SizedBox(height: 8),
                               Text(
                                 widget.task.description!,
-                                style: const TextStyle(
-                                  color: Color(0xFF475569),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 13,
                                   height: 1.5,
                                 ),
@@ -1455,7 +1447,7 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                               child: Text(
                                 widget.formatDate(widget.task.createdAt),
                                 style: const TextStyle(
-                                  color: AppColors.darkSubtext,
+                                  color: _TColors.darkSubtext,
                                   fontSize: 10,
                                 ),
                               ),
@@ -1561,10 +1553,10 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                 top: 12,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 16,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
                 border: Border(
-                  top: BorderSide(color: AppColors.darkBorder),
+                  top: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
               child: Column(
@@ -1576,17 +1568,17 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                     enabled: !isExpired && !widget.isSubmitting,
                     maxLines: 3,
                     minLines: 1,
-                    style: const TextStyle(
-                      color: Color(0xFF0F172A),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                     ),
                     decoration: InputDecoration(
                       hintText: isExpired
                           ? "Topshiriq muddati o'tgan"
                           : 'Izoh yozing...',
-                      hintStyle: const TextStyle(color: AppColors.darkSubtext),
+                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       filled: true,
-                      fillColor: AppColors.darkCard,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 12,
@@ -1597,21 +1589,21 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: AppColors.darkBorder,
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide(
-                          color: AppColors.accent,
+                          color: _TColors.accent,
                           width: 1.5,
                         ),
                       ),
                       disabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: AppColors.darkBorder,
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
                         ),
                       ),
                     ),
@@ -1630,12 +1622,12 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.darkCard,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: _selectedFile != null
-                              ? AppColors.accent.withValues(alpha: 0.5)
-                              : AppColors.darkBorder,
+                              ? _TColors.accent.withValues(alpha: 0.5)
+                              : Theme.of(context).dividerColor,
                         ),
                       ),
                       child: Row(
@@ -1645,8 +1637,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                                 ? Icons.insert_drive_file_rounded
                                 : Icons.attach_file_rounded,
                             color: _selectedFile != null
-                                ? AppColors.accent
-                                : AppColors.darkSubtext,
+                                ? _TColors.accent
+                                : _TColors.darkSubtext,
                             size: 18,
                           ),
                           const SizedBox(width: 10),
@@ -1655,8 +1647,8 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                               selectedFileText,
                               style: TextStyle(
                                 color: _selectedFile != null
-                                    ? const Color(0xFF0F172A)
-                                    : AppColors.darkSubtext,
+                                    ? Theme.of(context).colorScheme.onSurface
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 13,
                                 fontWeight: _selectedFile != null
                                     ? FontWeight.w500
@@ -1691,10 +1683,10 @@ class _TaskDetailBottomSheetState extends State<_TaskDetailBottomSheet> {
                           ? null
                           : _handleSubmit,
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.accent,
+                        backgroundColor: _TColors.accent,
                         disabledBackgroundColor: isExpired
                             ? Colors.redAccent.withValues(alpha: 0.35)
-                            : AppColors.accent.withValues(alpha: 0.4),
+                            : _TColors.accent.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -1750,8 +1742,8 @@ class _ChatBubble extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isRight
-              ? AppColors.accent
-              : Colors.white,
+              ? _TColors.accent
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -1803,12 +1795,12 @@ class _ChatFileBubble extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 320),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isRight ? AppColors.accent : Colors.white,
+        color: isRight ? _TColors.accent : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isRight
-              ? AppColors.accentLight.withValues(alpha: 0.4)
-              : AppColors.darkBorder,
+              ? _TColors.accentLight.withValues(alpha: 0.4)
+              : Theme.of(context).dividerColor,
         ),
         boxShadow: [
           BoxShadow(
@@ -1830,12 +1822,12 @@ class _ChatFileBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isRight
                     ? Colors.white.withValues(alpha: 0.2)
-                    : AppColors.accent.withValues(alpha: 0.1),
+                    : _TColors.accent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.download_rounded,
-                color: isRight ? Colors.white : AppColors.accent,
+                color: isRight ? Colors.white : _TColors.accent,
                 size: 24,
               ),
             ),
@@ -1852,7 +1844,7 @@ class _ChatFileBubble extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isRight ? Colors.white : const Color(0xFF0F172A),
+                    color: isRight ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     height: 1.35,
@@ -1864,7 +1856,7 @@ class _ChatFileBubble extends StatelessWidget {
                   style: TextStyle(
                     color: isRight
                         ? Colors.white.withValues(alpha: 0.7)
-                        : AppColors.darkSubtext,
+                        : _TColors.darkSubtext,
                     fontSize: 12,
                   ),
                 ),
@@ -1883,12 +1875,12 @@ class _ChatFileBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isRight
                       ? Colors.white.withValues(alpha: 0.2)
-                      : AppColors.accent.withValues(alpha: 0.1),
+                      : _TColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.visibility_rounded,
-                  color: isRight ? Colors.white : AppColors.accent,
+                  color: isRight ? Colors.white : _TColors.accent,
                   size: 20,
                 ),
               ),

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_amaliyot_app/app/app.dart';
 import 'package:student_amaliyot_app/screens/profile_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/about_app_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/appearance_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/connect_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/language_screen.dart';
-import 'package:student_amaliyot_app/screens/setting/notifications_screen.dart';
 import 'package:student_amaliyot_app/screens/setting/security_screen.dart';
 import 'login_screen.dart';
 
@@ -33,6 +31,47 @@ class _SettingPageState extends State<SettingPage> {
       default:
         return "O'zbek tili";
     }
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final nav = Navigator.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Chiqish'),
+        content: const Text('Hisobdan chiqishni xohlaysizmi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Bekor qilish'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE63946),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Chiqish'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await AuthService.logout();
+    await AvatarService.clearImage();
+
+    if (!mounted) return;
+
+    nav.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   Future<void> showLanguageSheet(BuildContext context) async {
@@ -67,7 +106,6 @@ class _SettingPageState extends State<SettingPage> {
     final appLanguage = MyApp.of(context)?.languageCode ?? 'uz';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -80,7 +118,7 @@ class _SettingPageState extends State<SettingPage> {
                 iconColor: const Color(0xFF6C63FF),
                 iconBg: const Color(0xFFEDE9FF),
                 title: 'Profil',
-                subtitle: 'Ma\'lumotlaringizni tahrirlang',
+                subtitle: "Ma'lumotlaringizni tahrirlang",
                 onTap: () {
                   Navigator.push(
                     context,
@@ -97,7 +135,6 @@ class _SettingPageState extends State<SettingPage> {
                 title: 'Xavfsizlik',
                 subtitle: 'Parol va autentifikatsiya',
                 onTap: () {
-                  // SecurityScreen ochiladi
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -119,33 +156,17 @@ class _SettingPageState extends State<SettingPage> {
                   showLanguageSheet(context);
                 },
               ),
-              // _SettingTile(
-              //   icon: Icons.notifications_none_rounded,
-              //   iconColor: const Color(0xFFF4A261),
-              //   iconBg: const Color(0xFFFFF3E8),
-              //   title: 'Bildirishnomalar',
-              //   subtitle: 'Push va email xabarnomalar',
-              //   onTap: () {
-              //     // NotificationsScreen ochiladi
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (_) => const NotificationScreen(),
-              //       ),
-              //     );
-              //   },
-              // ),
               _SettingTile(
                 icon: Icons.palette_outlined,
                 iconColor: const Color(0xFFE63946),
                 iconBg: const Color(0xFFFFECEE),
-                title: 'Ko\'rinish',
+                title: "Ko'rinish",
                 subtitle: 'Mavzu va rang sxemasi',
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const AppearanceScreen(), // ✅ TO‘G‘RI
+                      builder: (_) => const AppearanceScreen(),
                     ),
                   );
                 },
@@ -157,10 +178,9 @@ class _SettingPageState extends State<SettingPage> {
                 icon: Icons.support_agent,
                 iconColor: const Color(0xFF8338EC),
                 iconBg: const Color(0xFFF1E9FD),
-                title: 'Bog\'lanish',
-                subtitle: 'Savollar va muammolar bo\'yicha yordam',
+                title: "Bog'lanish",
+                subtitle: "Savollar va muammolar bo'yicha yordam",
                 onTap: () {
-                  // Bog'lanish sahifasi yoki dialog
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -176,7 +196,6 @@ class _SettingPageState extends State<SettingPage> {
                 title: 'Ilova haqida',
                 subtitle: 'Versiya, litsenziya va aloqa',
                 onTap: () {
-                  // AboutAppScreen ochiladi
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -190,23 +209,7 @@ class _SettingPageState extends State<SettingPage> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final prefs = await SharedPreferences.getInstance();
-
-                    // 🔥 tokenni o‘chiramiz
-                    await prefs.remove('token');
-
-                    if (!mounted) return;
-
-                    // 🔥 login sahifaga qaytish (barcha oldingi sahifalarni o‘chiradi)
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                          (route) => false,
-                    );
-                  },
+                  onPressed: () => _confirmLogout(context),
                   icon: const Icon(
                     Icons.logout_rounded,
                     color: Color(0xFFE63946),
@@ -252,10 +255,10 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF9B9BB4),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: 1.2,
         ),
       ),
@@ -285,11 +288,11 @@ class _SettingTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -315,22 +318,22 @@ class _SettingTile extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1A1A2E),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Color(0xFF9B9BB4),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.chevron_right_rounded,
-          color: Color(0xFFCCCCDD),
+          color: Theme.of(context).colorScheme.outlineVariant,
           size: 22,
         ),
         onTap: onTap,

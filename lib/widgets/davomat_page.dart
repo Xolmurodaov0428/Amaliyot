@@ -138,7 +138,7 @@ class _UzbekCalendarDialogState extends State<UzbekCalendarDialog> {
     final cellCount = (totalCells / 7).ceil() * 7;
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       insetPadding: const EdgeInsets.all(18),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
@@ -795,7 +795,7 @@ class _DavomatPageState extends State<DavomatPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo‘q'),
+            child: const Text("Yo'q"),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -836,12 +836,12 @@ class _DavomatPageState extends State<DavomatPage> {
       if (res.statusCode == 200) {
         final dynamic body = jsonDecode(res.body);
         if (body is! Map<String, dynamic>) {
-          return _setError('Server xatosi: noto‘g‘ri JSON format.');
+          return _setError("Server xatosi: noto'g'ri JSON format.");
         }
 
         final dynamic data = body['data'];
         if (data is! Map<String, dynamic>) {
-          return _setError('Ma’lumotlar topilmadi (data field missing).');
+          return _setError("Ma'lumotlar topilmadi (data field missing).");
         }
         final selectedDatesRaw =
             data['selected_dates'] ?? data['active_days'] ?? data['internship']?['selected_dates'];
@@ -870,7 +870,7 @@ class _DavomatPageState extends State<DavomatPage> {
             organizationMap['longitude']?.toString() ?? '',
           );
 
-          // Backenddan radius odatda km ko‘rinishida keladi: 0.07 => 70 metr.
+          // Backenddan radius odatda km ko'rinishida keladi: 0.07 => 70 metr.
           final radiusKm = double.tryParse(
             organizationMap['radius']?.toString() ?? '',
           ) ??
@@ -936,7 +936,7 @@ class _DavomatPageState extends State<DavomatPage> {
     } on TimeoutException {
       _setError('Server javob bermadi.');
     } on FormatException {
-      _setError('Serverdan noto‘g‘ri ma’lumot keldi.');
+      _setError("Serverdan noto'g'ri ma'lumot keldi.");
     } catch (e) {
       _setError('Xato: $e');
     }
@@ -959,11 +959,11 @@ class _DavomatPageState extends State<DavomatPage> {
     );
 
     if (selectedDate.isBefore(today)) {
-      _snack('O‘tgan kunlar uchun davomat belgilab bo‘lmaydi!', Colors.red);
+      _snack("O'tgan kunlar uchun davomat belgilab bo'lmaydi!", Colors.red);
       return;
     }
     if (!_isSelectedDateAllowed()) {
-      _snack('Bu sana amaliyot kuni emas. Davomat belgilab bo‘lmaydi!', Colors.red);
+      _snack("Bu sana amaliyot kuni emas. Davomat belgilab bo'lmaydi!", Colors.red);
       return;
     }
     if (_selectedCount == 0) {
@@ -1050,10 +1050,10 @@ class _DavomatPageState extends State<DavomatPage> {
           'date': _selectedDateKey(),
           'session': session,
           'status': status,
-          // Hududdan tashqarida bo‘lsa ham urinish vaqti saqlanadi.
+          // Hududdan tashqarida bo'lsa ham urinish vaqti saqlanadi.
           'check_in_time': _currentTimeHHmm(),
           'check_out_time': null,
-          // Hududdan tashqarida bo‘lsa ham audit uchun koordinata yuboriladi.
+          // Hududdan tashqarida bo'lsa ham audit uchun koordinata yuboriladi.
           'latitude': position.latitude,
           'longitude': position.longitude,
           'notes': note,
@@ -1109,7 +1109,6 @@ class _DavomatPageState extends State<DavomatPage> {
     return LayoutBuilder(builder: (ctx, box) {
       final r = _R(box.maxWidth);
       return Scaffold(
-        backgroundColor: Colors.grey[100],
         floatingActionButton: _fab(r),
         body: SafeArea(
           child: RefreshIndicator(
@@ -1153,7 +1152,7 @@ class _DavomatPageState extends State<DavomatPage> {
       borderRadius: BorderRadius.circular(r.radius),
       boxShadow: [
         BoxShadow(
-          color: Colors.teal.withOpacity(0.3),
+          color: Colors.teal.withValues(alpha: 0.3),
           blurRadius: 10,
           offset: const Offset(0, 5),
         ),
@@ -1232,7 +1231,7 @@ class _DavomatPageState extends State<DavomatPage> {
                 child: CircularProgressIndicator(
                   value: (pct / 100).clamp(0.0, 1.0),
                   strokeWidth: r.stroke,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
                   valueColor: AlwaysStoppedAnimation(color),
                 ),
               ),
@@ -1305,13 +1304,13 @@ class _DavomatPageState extends State<DavomatPage> {
   Widget _badge(_R r, String label, bool active) => Container(
     padding: EdgeInsets.symmetric(horizontal: r.isXS ? 5 : 7, vertical: 3),
     decoration: BoxDecoration(
-      color: active ? Colors.teal : Colors.grey[200],
+      color: active ? Colors.teal : Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(20),
     ),
     child: Text(
       label,
       style: TextStyle(
-        color: active ? Colors.white : Colors.grey[500],
+        color: active ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
         fontSize: r.fs10,
         fontWeight: FontWeight.bold,
       ),
@@ -1391,7 +1390,7 @@ class _DavomatPageState extends State<DavomatPage> {
           Container(
             padding: EdgeInsets.all(r.slotPad),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: r.iconSm),
@@ -1466,7 +1465,7 @@ class _DavomatPageState extends State<DavomatPage> {
         child: Padding(
           padding: const EdgeInsets.all(40),
           child: Text(
-            'Davomat tarixi yo\'q',
+            "Davomat tarixi yo'q",
             style: TextStyle(color: Colors.grey[600], fontSize: r.fs14),
           ),
         ),
@@ -1545,7 +1544,7 @@ class _DavomatPageState extends State<DavomatPage> {
               vertical: 4,
             ),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -1576,11 +1575,11 @@ class _DavomatPageState extends State<DavomatPage> {
   }
 
   BoxDecoration _card(_R r) => BoxDecoration(
-    color: Colors.white,
+    color: Theme.of(context).cardColor,
     borderRadius: BorderRadius.circular(r.radius),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.05),
+        color: Colors.black.withValues(alpha: 0.05),
         blurRadius: 10,
         offset: const Offset(0, 4),
       ),

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../constants/api_config.dart';
 import '../widgets/setting/setting_appbar.dart';
 
 class SecurityScreen extends StatefulWidget {
@@ -19,7 +20,6 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   bool _pinEnabled = false;
   bool _biometricEnabled = false;
-  bool _isLoading = false;
 
   static const String _pinKey = 'app_lock_pin';
   static const String _pinEnabledKey = 'pin_enabled';
@@ -49,7 +49,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
     if (!mounted) return;
     setState(() => _pinEnabled = true);
 
-    _showSnack('PIN muvaffaqiyatli yoqildi ✅', Colors.green);
+    _showSnack("PIN muvaffaqiyatli yoqildi", Colors.green);
   }
 
   Future<void> _removePin() async {
@@ -64,7 +64,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       _biometricEnabled = false;
     });
 
-    _showSnack('PIN o‘chirildi', Colors.orange);
+    _showSnack("PIN o'chirildi", Colors.orange);
   }
 
   Future<void> _toggleBiometric(bool value) async {
@@ -100,7 +100,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
     setState(() => _biometricEnabled = value);
 
     _showSnack(
-      value ? 'Biometrik kirish yoqildi ✅' : 'Biometrik kirish o‘chirildi',
+      value ? "Biometrik kirish yoqildi" : "Biometrik kirish o'chirildi",
       value ? Colors.green : Colors.orange,
     );
   }
@@ -116,11 +116,9 @@ class _SecurityScreenState extends State<SecurityScreen> {
     }
 
     if (newPassword.length < 6) {
-      _showSnack('Yangi parol kamida 6 ta belgidan iborat bo‘lsin', Colors.red);
+      _showSnack("Yangi parol kamida 6 ta belgidan iborat bo'lsin", Colors.red);
       return;
     }
-
-    setState(() => _isLoading = true);
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -132,7 +130,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       }
 
       final res = await http.post(
-        Uri.parse('https://shaxa.mycoder.uz/api/student/change-password'),
+        ApiConfig.uri('change-password'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -148,18 +146,17 @@ class _SecurityScreenState extends State<SecurityScreen> {
       final body = jsonDecode(res.body);
 
       if (res.statusCode == 200 || res.statusCode == 201) {
-        _showSnack('Parol muvaffaqiyatli o‘zgartirildi ✅', Colors.green);
+        _showSnack("Parol muvaffaqiyatli o'zgartirildi", Colors.green);
         if (mounted) Navigator.pop(context);
       } else {
         _showSnack(
-          body['message']?.toString() ?? 'Parolni o‘zgartirishda xato',
+          body['message']?.toString() ?? "Parolni o'zgartirishda xato",
           Colors.red,
         );
       }
     } catch (e) {
       _showSnack('Xato: $e', Colors.red);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -174,7 +171,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) {
         return _BottomSheetCard(
-          title: 'Parolni o‘zgartirish',
+          title: "Parolni o'zgartirish",
           child: Column(
             children: [
               _PasswordField(controller: oldCtrl, label: 'Eski parol'),
@@ -188,11 +185,14 @@ class _SecurityScreenState extends State<SecurityScreen> {
                 height: 48,
                 child: FilledButton(
                   onPressed: () {
+                    final old = oldCtrl.text.trim();
+                    final newP = newCtrl.text.trim();
+                    final conf = confirmCtrl.text.trim();
                     Navigator.pop(context);
-
-                    _showSnack(
-                      "Parolni o‘zgartirish funksiyasi tez orada ko'rib chiqiladi",
-                      Colors.orange,
+                    _changePassword(
+                      oldPassword: old,
+                      newPassword: newP,
+                      confirmPassword: conf,
                     );
                   },
                   child: const Text('Saqlash'),
@@ -214,7 +214,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) {
         return _BottomSheetCard(
-          title: '4 xonali PIN o‘rnatish',
+          title: "4 xonali PIN o'rnatish",
           child: Column(
             children: [
               _PinField(controller: pinCtrl, label: 'PIN'),
@@ -230,7 +230,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                     final confirm = confirmCtrl.text.trim();
 
                     if (pin.length != 4 || confirm.length != 4) {
-                      _showSnack('PIN 4 xonali bo‘lishi kerak', Colors.red);
+                      _showSnack("PIN 4 xonali bo'lishi kerak", Colors.red);
                       return;
                     }
 
@@ -267,7 +267,6 @@ class _SecurityScreenState extends State<SecurityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
       body: Column(
         children: [
           const CustomAppBar(title: 'Xavfsizlik'),
@@ -280,7 +279,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                     icon: Icons.lock_reset_rounded,
                     iconBg: const Color(0xFFE0F2FE),
                     iconColor: const Color(0xFF0284C7),
-                    title: 'Parolni o‘zgartirish',
+                    title: "Parolni o'zgartirish",
                     subtitle: 'Eski parol orqali yangi parol yarating',
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: _showChangePasswordSheet,
@@ -294,7 +293,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                     title: 'PIN kod',
                     subtitle: _pinEnabled
                         ? 'Ilova PIN bilan himoyalangan'
-                        : 'Ilova ochilganda 4 xonali PIN so‘ralsin',
+                        : "Ilova ochilganda 4 xonali PIN so'ralsin",
                     trailing: Switch(
                       value: _pinEnabled,
                       onChanged: (value) {
@@ -361,7 +360,7 @@ class _SecurityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -372,7 +371,7 @@ class _SecurityCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),
@@ -446,7 +445,7 @@ class _BottomSheetCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
         ),
         child: SafeArea(

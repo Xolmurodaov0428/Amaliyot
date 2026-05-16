@@ -19,10 +19,9 @@ class ContactScreen extends StatelessWidget {
     final currentYear = DateTime.now().year;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
       body: Column(
         children: [
-          const CustomAppBar(title: "Bog‘lanish"),
+          const CustomAppBar(title: "Bog'lanish"),
 
           Expanded(
             child: SingleChildScrollView(
@@ -31,11 +30,11 @@ class ContactScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 22,
                       offset: const Offset(0, 8),
                     ),
@@ -44,28 +43,28 @@ class ContactScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "📞 Bog‘lanish",
+                    Text(
+                      "Bog'lanish",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF111827),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      "Savollar, texnik muammolar yoki takliflar bo‘yicha murojaat qilishingiz mumkin.",
+                    Text(
+                      "Savollar, texnik muammolar yoki takliflar bo'yicha murojaat qilishingiz mumkin.",
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.6,
-                        color: Color(0xFF4B5563),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 22),
 
                     const _ContactItem(
                       icon: Icons.person_rounded,
-                      title: "Mas’ul",
+                      title: "Mas'ul",
                       value: "Shahzod Xolmurodov",
                     ),
                     _ContactItem(
@@ -89,20 +88,20 @@ class ContactScreen extends StatelessWidget {
 
 
                     const SizedBox(height: 22),
-                    const Text(
-                      "💬 Murojaat mavzulari",
+                    Text(
+                      "Murojaat mavzulari",
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 17,
-                        color: Color(0xFF111827),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 10),
                     const _TopicItem("Login yoki parol muammosi"),
-                    const _TopicItem("Topshiriqlar ko‘rinmasligi"),
+                    const _TopicItem("Topshiriqlar ko'rinmasligi"),
                     const _TopicItem("Davomat xatoligi"),
                     const _TopicItem("Hujjat yuklash muammosi"),
-                    const _TopicItem("Ilova bo‘yicha takliflar"),
+                    const _TopicItem("Ilova bo'yicha takliflar"),
 
                     const SizedBox(height: 28),
                     Center(
@@ -143,7 +142,7 @@ class _ContactItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: const Color(0xFFF8FAFC),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -164,27 +163,27 @@ class _ContactItem extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
-                          color: Color(0xFF111827),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         value,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF6B7280),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
                 ),
                 if (onTap != null)
-                  const Icon(
+                  Icon(
                     Icons.open_in_new_rounded,
-                    color: Color(0xFF6B7280),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 21,
                   ),
               ],
@@ -212,10 +211,10 @@ class _TopicItem extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 height: 1.35,
-                color: Color(0xFF374151),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),

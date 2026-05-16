@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (form == null || !form.validate()) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Iltimos, barcha maydonlarni to‘ldiring.';
+        _errorMessage = "Iltimos, barcha maydonlarni to'ldiring.";
       });
       _shakeCtrl.forward(from: 0);
       return;
@@ -301,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  Colors.teal.withOpacity(0.35),
+                  Colors.teal.withValues(alpha: 0.35),
                   Colors.transparent,
                 ],
               ),
@@ -318,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF1A5276).withOpacity(0.5),
+                  const Color(0xFF1A5276).withValues(alpha: 0.5),
                   Colors.transparent,
                 ],
               ),
@@ -342,17 +342,17 @@ class _LoginScreenState extends State<LoginScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.10),
-            Colors.white.withOpacity(0.04),
+            Colors.white.withValues(alpha: 0.10),
+            Colors.white.withValues(alpha: 0.04),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.13),
+          color: Colors.white.withValues(alpha: 0.13),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             blurRadius: 40,
             spreadRadius: -8,
             offset: const Offset(0, 20),
@@ -461,7 +461,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.teal.withOpacity(0.5),
+                color: Colors.teal.withValues(alpha: 0.5),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -480,7 +480,7 @@ class _LoginScreenState extends State<LoginScreen>
             Text(
               'B S T U AMALIYOT',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
@@ -489,7 +489,7 @@ class _LoginScreenState extends State<LoginScreen>
             Text(
               'Ta\'lim boshqaruv tizimi',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.45),
+                color: Colors.white.withValues(alpha: 0.45),
                 fontSize: 11,
                 letterSpacing: 0.2,
               ),
@@ -507,7 +507,7 @@ class _LoginScreenState extends State<LoginScreen>
         Text(
           'Xush kelibsiz 👋',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.95),
+            color: Colors.white.withValues(alpha: 0.95),
             fontSize: 26,
             fontWeight: FontWeight.w800,
             height: 1.2,
@@ -518,7 +518,7 @@ class _LoginScreenState extends State<LoginScreen>
         Text(
           'Davom etish uchun tizimga kiring',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.45),
+            color: Colors.white.withValues(alpha: 0.45),
             fontSize: 14,
           ),
         ),
@@ -544,7 +544,7 @@ class _LoginScreenState extends State<LoginScreen>
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.65),
+            color: Colors.white.withValues(alpha: 0.65),
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
@@ -560,18 +560,18 @@ class _LoginScreenState extends State<LoginScreen>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 color: focused
-                    ? Colors.white.withOpacity(0.10)
-                    : Colors.white.withOpacity(0.06),
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white.withValues(alpha: 0.06),
                 border: Border.all(
                   color: focused
-                      ? Colors.teal.withOpacity(0.8)
-                      : Colors.white.withOpacity(0.12),
+                      ? Colors.teal.withValues(alpha: 0.8)
+                      : Colors.white.withValues(alpha: 0.12),
                   width: focused ? 1.5 : 1.0,
                 ),
                 boxShadow: focused
                     ? [
                   BoxShadow(
-                    color: Colors.teal.withOpacity(0.2),
+                    color: Colors.teal.withValues(alpha: 0.2),
                     blurRadius: 12,
                   ),
                 ]
@@ -592,12 +592,12 @@ class _LoginScreenState extends State<LoginScreen>
                 decoration: InputDecoration(
                   hintText: hint,
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     fontSize: 14,
                   ),
                   prefixIcon: Icon(
                     icon,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                     size: 20,
                   ),
                   suffixIcon: suffixIcon,
@@ -628,10 +628,10 @@ class _LoginScreenState extends State<LoginScreen>
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: Colors.redAccent.withOpacity(0.12),
+          color: Colors.redAccent.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.redAccent.withOpacity(0.3),
+            color: Colors.redAccent.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -697,7 +697,7 @@ class _LoginScreenState extends State<LoginScreen>
       '© 2026 BSTU Amaliyot  •  Barcha huquqlar himoyalangan',
       textAlign: TextAlign.center,
       style: TextStyle(
-        color: Colors.white.withOpacity(0.22),
+        color: Colors.white.withValues(alpha: 0.22),
         fontSize: 11,
         letterSpacing: 0.2,
       ),
@@ -763,7 +763,7 @@ class _GradientButtonState extends State<_GradientButton>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.teal.withOpacity(0.45),
+                color: Colors.teal.withValues(alpha: 0.45),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -801,7 +801,7 @@ class _DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = Colors.white.withValues(alpha: 0.04)
       ..strokeCap = StrokeCap.round;
 
     const spacing = 28.0;

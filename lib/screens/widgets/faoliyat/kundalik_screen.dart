@@ -59,7 +59,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
               return ListTile(
                 title: Text(t.title),
                 subtitle: Text(
-                  t.originalName.isEmpty ? 'Noma’lum fayl' : t.originalName,
+                  t.originalName.isEmpty ? "Noma'lum fayl" : t.originalName,
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -431,12 +431,12 @@ class _KundalikScreenState extends State<KundalikScreen> {
         await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('O‘chirish'),
-            content: const Text('Haqiqatan ham o‘chirasizmi?'),
+            title: const Text("O'chirish"),
+            content: const Text("Haqiqatan ham o'chirasizmi?"),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Yo‘q'),
+                child: const Text("Yo'q"),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
@@ -471,11 +471,11 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (!mounted) return;
 
       if (res.statusCode == 200 || res.statusCode == 204) {
-        _show('Kundalik o‘chirildi');
+        _show("Kundalik o'chirildi");
         await _loadReports();
       } else {
         final body = _safeJsonMap(res.body);
-        _show(body['message']?.toString() ?? 'O‘chirishda xato', error: true);
+        _show(body['message']?.toString() ?? "O'chirishda xato", error: true);
       }
     } catch (e) {
       if (!mounted) return;
@@ -491,7 +491,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
     final fixedUrl = _buildFileUrl(url);
 
     if (fixedUrl.isEmpty) {
-      _show('Fayl manzili yo‘q', error: true);
+      _show("Fayl manzili yo'q", error: true);
       return;
     }
 
@@ -506,7 +506,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (!mounted) return;
 
       if (uri == null) {
-        _show('Noto‘g‘ri fayl manzili', error: true);
+        _show("Noto'g'ri fayl manzili", error: true);
         return;
       }
 
@@ -521,7 +521,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
       if (!mounted) return;
 
       if (response.statusCode != 200) {
-        _show('Faylni yuklab bo‘lmadi: ${response.statusCode}', error: true);
+        _show("Faylni yuklab bo'lmadi: ${response.statusCode}", error: true);
         return;
       }
 
@@ -692,7 +692,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
           child: ListTile(
             title: Text(item.title),
             subtitle: Text(
-              item.originalName.isEmpty ? 'Noma’lum fayl' : item.originalName,
+              item.originalName.isEmpty ? "Noma'lum fayl" : item.originalName,
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -705,7 +705,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
                     onPressed: () => _openFile(item.fileUrl),
                   ),
 
-                // 📤 UPLOAD (faqat shablon bo‘lsa)
+                // 📤 UPLOAD (faqat shablon bo'lsa)
                 // if (item.fileUrl.isNotEmpty)
                 //   IconButton(
                 //     icon: const Icon(Icons.upload_file),
@@ -776,7 +776,7 @@ class _KundalikScreenState extends State<KundalikScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: item.statusColor.withOpacity(0.1),
+                        color: item.statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -810,10 +810,10 @@ class _KundalikScreenState extends State<KundalikScreen> {
                             ),
                           ),
 
-                        // O‘RTA BO‘SHLIK
+                        // O'RTA BO'SHLIK
                         const SizedBox(width: 10),
 
-                        // O‘NG — SANA
+                        // O'NG — SANA
                         if (item.submittedAt.isNotEmpty)
                           Text(
                             'Sana: ${item.submittedAt}',
@@ -1002,7 +1002,7 @@ class StudentReportModel {
       case 'pending':
         return 'Kutilmoqda';
       default:
-        return 'Noma’lum';
+        return "Noma'lum";
     }
   }
 
@@ -1149,7 +1149,7 @@ class _ReportSheetState extends State<_ReportSheet> {
       if (picked.path == null || picked.path!.isEmpty) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Fayl yo‘li topilmadi')));
+        ).showSnackBar(const SnackBar(content: Text("Fayl yo'li topilmadi")));
         return;
       }
 
@@ -1201,7 +1201,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                   return;
                 }
                 if (note.length > 35) {
-                  _showTopMessage("Izoh 35 ta belgidan ko'p bo‘lmasligi kerak");
+                  _showTopMessage("Izoh 35 ta belgidan ko'p bo'lmasligi kerak");
                   return;
                 }
 

@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:student_amaliyot_app/services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
+import '../constants/api_config.dart';
 import 'dart:typed_data';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,7 +23,7 @@ class AuthService {
     try {
       final res = await http
           .post(
-        Uri.parse('https://shaxa.mycoder.uz/api/student/login'),
+        ApiConfig.uri('login'),
         headers: const {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -389,7 +388,7 @@ class _AkkountPageState extends State<AkkountPage>
       CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOutSine),
     );
 
-    _loadAvatar(); // 🔥 SHUNI QO‘SH
+    _loadAvatar(); // 🔥 SHUNI QO'SH
     _loadProfile();
   }
 
@@ -459,8 +458,8 @@ class _AkkountPageState extends State<AkkountPage>
     });
 
     try {
-      final apiService = ApiService();
-      final token = await apiService.getToken();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
       if (!mounted) return;
 
@@ -471,7 +470,7 @@ class _AkkountPageState extends State<AkkountPage>
 
       final res = await http
           .get(
-        Uri.parse('https://shaxa.mycoder.uz/api/student/portal/profile'),
+        ApiConfig.uri('portal/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -496,7 +495,7 @@ class _AkkountPageState extends State<AkkountPage>
           break;
 
         case 401:
-          await apiService.clearSession();
+          await AuthService.logout();
           if (!mounted) return;
           _setError('Sessiya tugagan. Iltimos qayta kiring.');
           break;
@@ -535,7 +534,6 @@ class _AkkountPageState extends State<AkkountPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
       body: RefreshIndicator(
         onRefresh: _loadProfile,
         color: Colors.teal,
@@ -590,12 +588,12 @@ class _AkkountPageState extends State<AkkountPage>
             Positioned(
               top: -50,
               right: -50,
-              child: _circle(200, Colors.white.withOpacity(0.06)),
+              child: _circle(200, Colors.white.withValues(alpha: 0.06)),
             ),
             Positioned(
               bottom: -40,
               left: -40,
-              child: _circle(160, Colors.white.withOpacity(0.05)),
+              child: _circle(160, Colors.white.withValues(alpha: 0.05)),
             ),
             if (!_isLoading && _error.isEmpty && _profile != null)
               SafeArea(
@@ -624,10 +622,10 @@ class _AkkountPageState extends State<AkkountPage>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(
@@ -670,7 +668,7 @@ class _AkkountPageState extends State<AkkountPage>
               border: Border.all(color: Colors.white, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 14,
                 ),
               ],
@@ -842,10 +840,10 @@ class _AkkountPageState extends State<AkkountPage>
     padding: const EdgeInsets.only(bottom: 10),
     child: Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF2C3E50),
+        color: Theme.of(context).colorScheme.onSurface,
         letterSpacing: 0.1,
       ),
     ),
@@ -912,7 +910,7 @@ class _AkkountPageState extends State<AkkountPage>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.08),
+                  color: Colors.red.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -980,11 +978,11 @@ class _InfoCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -1023,7 +1021,7 @@ class _InfoRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.teal.withOpacity(0.08),
+              color: Colors.teal.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -1041,7 +1039,7 @@ class _InfoRow extends StatelessWidget {
                   item.label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey.shade500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
                   ),
@@ -1049,9 +1047,9 @@ class _InfoRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   item.value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF1A2533),
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1082,11 +1080,11 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -1097,7 +1095,7 @@ class _StatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -1111,7 +1109,7 @@ class _StatCard extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey.shade500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

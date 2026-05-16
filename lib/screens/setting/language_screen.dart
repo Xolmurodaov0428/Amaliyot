@@ -50,10 +50,6 @@ class _LanguageSheetState extends State<LanguageSheet> {
   }
 
   void _selectLanguage(String code) {
-    setState(() {
-      selectedLang = code;
-    });
-
     Navigator.pop(context, code);
   }
 

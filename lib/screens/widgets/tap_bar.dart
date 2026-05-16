@@ -2,6 +2,7 @@ import 'package:student_amaliyot_app/screens/widgets/faoliyat/faoliyat_screen.da
 import 'package:student_amaliyot_app/widgets/davomat_page.dart';
 import 'package:student_amaliyot_app/widgets/dashboard_page.dart';
 import 'package:student_amaliyot_app/widgets/topshiriq_page.dart';
+import '../../constants/app_colors.dart';
 import '../../utils/tools/file_importers.dart';
 import '../sozlamalar_screen.dart';
 
@@ -29,7 +30,7 @@ class TapBarPage extends StatelessWidget {
 
                 TopshiriqlarPage(),
 
-                DavomatPage(), // bunda scroll bo‘lsa o‘zida bo‘lsin
+                DavomatPage(), // bunda scroll bo'lsa o'zida bo'lsin
 
                 // Center(child: Text("📸 Hujjatlar", style: TextStyle(fontSize: 20))),
                 FaoliyatPage(),
@@ -42,8 +43,8 @@ class TapBarPage extends StatelessWidget {
             bottomNavigationBar: Container(
               height: 90,
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue, Colors.purple],
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryBlue, AppColors.accentPurple],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

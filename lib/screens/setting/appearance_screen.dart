@@ -5,10 +5,6 @@ import 'package:student_amaliyot_app/services/theme_service.dart';
 import 'package:student_amaliyot_app/services/icon_service.dart';
 import '../widgets/setting/setting_appbar.dart';
 
-// ─────────────────────────────────────────────
-// SVG larni to'g'ridan-to'g'ri kod ichida saqlash
-// (keyinchalik assets/ papkasiga o'tkaziladi)
-// ─────────────────────────────────────────────
 
 const String _svgNightBlue = '''
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
@@ -334,10 +330,10 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
   int _selectedIcon = 0;
 
   static const List<_IconOption> _icons = [
-    _IconOption(label: 'Tun Ko\'k',       svgData: _svgNightBlue),
-    _IconOption(label: 'Ko\'k-Binafsha',  svgData: _svgBluePurple),
-    _IconOption(label: 'Tun Ko\'k (Yum)', svgData: _svgTunKokiRound),
-    _IconOption(label: 'Ko\'k-Binafsha (Yum)', svgData: _svgKokBinafsha),
+    _IconOption(label: "Tun Ko'k",            svgData: _svgNightBlue),
+    _IconOption(label: "Ko'k-Binafsha",       svgData: _svgBluePurple),
+    _IconOption(label: "Tun Ko'k (Yum)",      svgData: _svgTunKokiRound),
+    _IconOption(label: "Ko'k-Binafsha (Yum)", svgData: _svgKokBinafsha),
   ];
 
   @override
@@ -360,7 +356,6 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
   }
 
   Future<void> _changeTheme(String value) async {
-    await ThemeService.saveTheme(value);
     setState(() => _theme = value);
     MyApp.of(context)?.changeTheme(value);
   }
@@ -368,8 +363,8 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
   Future<void> _changeIcon(int index) async {
     try {
       await IconService.changeIcon(index);
-      setState(() => _selectedIcon = index);
       if (!mounted) return;
+      setState(() => _selectedIcon = index);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${_icons[index].label} ikonkasi tanlandi'),
@@ -377,6 +372,7 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
         ),
       );
     } catch (_) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Ikonkani o'zgartirib bo'lmadi"),
@@ -400,23 +396,25 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
             child: Text('Tema',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
-          RadioListTile(
-            value: 'light',
+          RadioGroup<String>(
             groupValue: _theme,
-            title: const Text("Yorug' (Light)"),
-            onChanged: (v) => _changeTheme(v!),
-          ),
-          RadioListTile(
-            value: 'dark',
-            groupValue: _theme,
-            title: const Text("Qorong'i (Dark)"),
-            onChanged: (v) => _changeTheme(v!),
-          ),
-          RadioListTile(
-            value: 'system',
-            groupValue: _theme,
-            title: const Text("Tizim bilan bir xil"),
-            onChanged: (v) => _changeTheme(v!),
+            onChanged: (v) { if (v != null) _changeTheme(v); },
+            child: Column(
+              children: [
+                RadioListTile<String>(
+                  value: 'light',
+                  title: const Text("Yorug' (Light)"),
+                ),
+                RadioListTile<String>(
+                  value: 'dark',
+                  title: const Text("Qorong'i (Dark)"),
+                ),
+                RadioListTile<String>(
+                  value: 'system',
+                  title: const Text("Tizim bilan bir xil"),
+                ),
+              ],
+            ),
           ),
 
           const Divider(),
@@ -439,7 +437,6 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Tanlangan bo'lsa ko'k border
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.all(3),
@@ -454,7 +451,7 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
                           boxShadow: isSelected
                               ? [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.4),
+                              color: Colors.blue.withValues(alpha: 0.4),
                               blurRadius: 10,
                               spreadRadius: 2,
                             )

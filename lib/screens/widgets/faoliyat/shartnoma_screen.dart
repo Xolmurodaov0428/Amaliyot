@@ -95,7 +95,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
   }
 
   String getFileName(String path) {
-    if (path.trim().isEmpty) return 'Noma’lum fayl';
+    if (path.trim().isEmpty) return "Noma'lum fayl";
     final parts = path.split('/');
     return parts.isNotEmpty ? parts.last : path;
   }
@@ -134,13 +134,13 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
 
     final uri = Uri.tryParse(fileUrl);
     if (uri == null) {
-      _showSnack('Noto‘g‘ri fayl manzili.', isError: true);
+      _showSnack("Noto'g'ri fayl manzili.", isError: true);
       return;
     }
 
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      _showSnack('Faylni ochib bo‘lmadi.', isError: true);
+      _showSnack("Faylni ochib bo'lmadi.", isError: true);
     }
   }
 
@@ -288,11 +288,11 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
       );
 
       if (response.statusCode == 200) {
-        _showSnack('Hujjat o‘chirildi.');
+        _showSnack("Hujjat o'chirildi.");
         await fetchDocuments();
       } else {
         _showSnack(
-          'O‘chirishda xatolik: ${response.statusCode}\n${response.body}',
+          "O'chirishda xatolik: ${response.statusCode}\n${response.body}",
           isError: true,
         );
       }
@@ -318,7 +318,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
         return StatefulBuilder(
           builder: (context, setLocalState) {
             return AlertDialog(
-              title: const Text('Hujjat qo‘shish'),
+              title: const Text("Hujjat qo'shish"),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -327,9 +327,9 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.06),
+                        color: Colors.blue.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.withOpacity(0.15)),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
                       ),
                       child: Text(
                         'Sana avtomatik yuboriladi: ${formatDate(_todayDate())}',
@@ -427,12 +427,12 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.06),
+                        color: Colors.orange.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withOpacity(0.15)),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.15)),
                       ),
                       child: Text(
-                        'Yangilanganda sana avtomatik bugungi sana bo‘ladi: ${formatDate(_todayDate())}',
+                        "Yangilanganda sana avtomatik bugungi sana bo'ladi: ${formatDate(_todayDate())}",
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -517,14 +517,14 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Hujjatni o‘chirish'),
+          title: const Text("Hujjatni o'chirish"),
           content: Text(
-            'ID ${doc.id} bo‘lgan hujjatni o‘chirmoqchimisiz?',
+            "ID ${doc.id} bo'lgan hujjatni o'chirmoqchimisiz?",
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Yo‘q'),
+              child: const Text("Yo'q"),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
@@ -564,9 +564,9 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,7 +575,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color),
@@ -708,7 +708,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -748,7 +748,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
                         ),
                         PopupMenuItem(
                           value: 'delete',
-                          child: Text('O‘chirish'),
+                          child: Text("O'chirish"),
                         ),
                       ],
                     ),
@@ -800,7 +800,7 @@ class _ShartnomaScreenState extends State<ShartnomaScreen> {
           _buildBody(),
           if (isSubmitting)
             Container(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               child: const Center(
                 child: CircularProgressIndicator(),
               ),

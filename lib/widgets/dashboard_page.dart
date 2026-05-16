@@ -5,23 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../constants/api_config.dart';
+import '../constants/app_colors.dart';
 import '../screens/profile_screen.dart';
-// ============= COLOR CONSTANTS =============
-class AppColors {
-  static const Color primaryBlue = Color(0xFF0066cc);
-  static const Color primaryDarkBlue = Color(0xFF0052a3);
-  static const Color secondaryCyan = Color(0xFF00d9ff);
-  static const Color successGreen = Color(0xFF10b981);
-  static const Color warningOrange = Color(0xFFf59e0b);
-  static const Color dangerRed = Color(0xFFef4444);
-  static const Color lightGray = Color(0xFFF9FAFB);
-  static const Color borderGray = Color(0xFFE5E7EB);
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color lightBlue = Color(0xFFE6F0FF);
-  static const Color successLight = Color(0xFFD1FAE5);
-  static const Color warningLight = Color(0xFFFEF3C7);
-}
+import 'chat_page.dart';
 
 // ============= MODELS =============
 class TaskModel {
@@ -40,7 +27,7 @@ class TaskModel {
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     final due = json['due_date'];
 
-    String formattedDate = '📅 Sana yo‘q';
+    String formattedDate = "📅 Sana yo'q";
 
     if (due != null) {
       final d = DateTime.parse(due.toString());
@@ -61,20 +48,20 @@ class StatisticModel {
   final String value;
   final String label;
   final LinearGradient gradient;
+  final IconData icon;
 
   const StatisticModel({
     required this.value,
     required this.label,
     required this.gradient,
+    required this.icon,
   });
 }
 
 // ============= MAIN PAGE =============
 class StudentPortalPage extends StatefulWidget {
 
-  const StudentPortalPage({
-    Key? key,
-  }) : super(key: key);
+  const StudentPortalPage({super.key});
 
   @override
   State<StudentPortalPage> createState() => _StudentPortalPageState();
@@ -90,15 +77,15 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   String? errorMessage;
   Map<String, dynamic>? dashboard;
   Uint8List? avatarBytes;
-
-
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadAvatar(); // 🔥 SHUNI QO‘SH
+    _loadAvatar();
     fetchDashboard();
+    _loadUnreadCount();
   }
 
   Future<void> _loadAvatar() async {
@@ -109,6 +96,56 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
+  }
+
+  Uri _buildStudentUri(String path) => ApiConfig.uri(path);
+
+  Map<String, String> _authHeaders(String token) => {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+  Map<String, dynamic> _safeJsonMap(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) return;
+
+      final response = await http.get(
+        _buildStudentUri('messages/unread-count'),
+        headers: _authHeaders(token),
+      );
+      final body = _safeJsonMap(response.body);
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 && body['success'] == true) {
+        final data = body['data'];
+        int unread = 0;
+
+        if (data is Map<String, dynamic>) {
+          unread = int.tryParse(
+                (data['unread_count'] ?? data['count'] ?? 0).toString(),
+              ) ??
+              0;
+        } else {
+          unread = int.tryParse(data?.toString() ?? '0') ?? 0;
+        }
+
+        setState(() => _unreadCount = unread);
+      }
+    } catch (_) {
+      // Unread badge stays non-blocking.
+    }
   }
 
   Future<void> _openOrganizationLocation() async {
@@ -151,12 +188,6 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   DateTime? _parseDate(String? date) {
     if (date == null || date.isEmpty) return null;
     return DateTime.tryParse(date);
-  }
-
-  String _dateKey(DateTime date) {
-    return '${date.year.toString().padLeft(4, '0')}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
   }
 
   Future<void> _openInternshipCalendar() async {
@@ -230,11 +261,8 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       }
 
       final response = await http.get(
-        Uri.parse('https://shaxa.mycoder.uz/api/student/dashboard-student'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        ApiConfig.uri('dashboard-student'),
+        headers: _authHeaders(token),
       );
 
       final body = jsonDecode(response.body);
@@ -263,6 +291,26 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       });
     }
   }
+  Future<void> _refreshDashboard() async {
+    try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) return;
+      final response = await http.get(
+        ApiConfig.uri('dashboard-student'),
+        headers: _authHeaders(token),
+      );
+      final body = _safeJsonMap(response.body);
+      if (!mounted) return;
+      if (response.statusCode == 200 && body['success'] == true) {
+        setState(() {
+          dashboard = Map<String, dynamic>.from(body['data']);
+          errorMessage = null;
+        });
+      }
+    } catch (_) {}
+    await _loadUnreadCount();
+  }
+
   @override
   void dispose() {
     _headerController.dispose();
@@ -273,8 +321,24 @@ class _StudentPortalPageState extends State<StudentPortalPage>
 
   String value(dynamic v, [String fallback = 'Kiritilmagan']) {
     if (v == null) return fallback;
-    final text = v.toString();
-    return text.isEmpty ? fallback : text;
+    final text = v.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'no name' || text.toLowerCase() == 'null') {
+      return fallback;
+    }
+    return text;
+  }
+
+  String _fmtDate(dynamic raw) {
+    if (raw == null) return 'Kiritilmagan';
+    try {
+      final s = raw.toString().replaceFirst(' ', 'T');
+      final dt = DateTime.parse(s);
+      final d = dt.day.toString().padLeft(2, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      return '$d.$m.${dt.year}';
+    } catch (_) {
+      return raw.toString();
+    }
   }
 
   Map<String, dynamic> map(String key) {
@@ -284,7 +348,7 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   }
 
   List<TaskModel> get tasks {
-    final raw = dashboard?['tasks']; // 🔥 FIX
+    final raw = dashboard?['tasks'];
 
     if (raw is List) {
       return raw
@@ -302,29 +366,41 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       StatisticModel(
         value: '${value(stats['percentage'], '0')}%',
         label: 'Davomat',
+        icon: Icons.bar_chart_rounded,
         gradient: const LinearGradient(
-          colors: [AppColors.primaryBlue, AppColors.primaryDarkBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
         ),
       ),
       StatisticModel(
         value: value(stats['present'], '0'),
         label: 'Keldi',
+        icon: Icons.check_circle_outline_rounded,
         gradient: const LinearGradient(
-          colors: [AppColors.successGreen, Color(0xFF059669)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF10B981), Color(0xFF059669)],
         ),
       ),
       StatisticModel(
         value: value(stats['absent'], '0'),
         label: 'Kelmadi',
+        icon: Icons.highlight_off_rounded,
         gradient: const LinearGradient(
-          colors: [AppColors.dangerRed, Color(0xFFdc2626)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
         ),
       ),
       StatisticModel(
         value: value(stats['late'], '0'),
         label: 'Kech keldi',
+        icon: Icons.schedule_rounded,
         gradient: const LinearGradient(
-          colors: [AppColors.warningOrange, Color(0xFFd97706)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
         ),
       ),
     ];
@@ -337,14 +413,12 @@ class _StudentPortalPageState extends State<StudentPortalPage>
 
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: AppColors.lightGray,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (errorMessage != null) {
       return Scaffold(
-        backgroundColor: AppColors.lightGray,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -373,9 +447,9 @@ class _StudentPortalPageState extends State<StudentPortalPage>
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightGray,
+      floatingActionButton: _buildChatFab(),
       body: RefreshIndicator(
-        onRefresh: fetchDashboard,
+        onRefresh: _refreshDashboard,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
@@ -389,11 +463,53 @@ class _StudentPortalPageState extends State<StudentPortalPage>
                 _buildAnimatedStatusCards(),
                 const SizedBox(height: 32),
                 _buildAnimatedContent(isMobile, isTablet),
+                const SizedBox(height: 80),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildChatFab() {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        FloatingActionButton(
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatPage()),
+            );
+            _loadUnreadCount();
+          },
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
+          tooltip: 'Rahbar bilan chat',
+          child: const Icon(Icons.chat_bubble_rounded),
+        ),
+        if (_unreadCount > 0)
+          Positioned(
+            top: -4,
+            right: -4,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: AppColors.dangerRed,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$_unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -430,7 +546,7 @@ class _StudentPortalPageState extends State<StudentPortalPage>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withOpacity(0.15),
+            color: AppColors.primaryBlue.withValues(alpha: 0.15),
             blurRadius: 40,
             offset: const Offset(0, 10),
           ),
@@ -444,9 +560,9 @@ class _StudentPortalPageState extends State<StudentPortalPage>
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               border: Border.all(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(100),
@@ -493,14 +609,16 @@ class _StudentPortalPageState extends State<StudentPortalPage>
                     _buildMetaItem('👨‍🏫 Rahbar:', value(supervisor['name'])),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildMetaItem('🏢 Tashkilot Rahbari:', value(leader['name']),),
-                  ],
-                ),
+                if (value(leader['name']) != 'Kiritilmagan') ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildMetaItem('🏢 Tashkilot Rahbari:', value(leader['name'])),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -550,9 +668,8 @@ class _StudentPortalPageState extends State<StudentPortalPage>
     final organization = map('organization');
 
     final activeDays = internship['active_days'];
-    String firstDay = value(internship['start_date']);
-    String lastDay = value(internship['end_date']);
-    final today = DateTime.now().toString().substring(0, 10);
+    final firstDay = _fmtDate(internship['start_date']);
+    final lastDay = _fmtDate(internship['end_date']);
 
     String trailingIcon;
 
@@ -584,7 +701,7 @@ class _StudentPortalPageState extends State<StudentPortalPage>
           mainText: value(organization['name'], 'Tashkilot kiritilmagan'),
           subText: organization['latitude'] == null || organization['longitude'] == null
               ? 'Lokatsiya hali kiritilmagan'
-              : 'Xaritada ko‘rish uchun bosing',
+              : "Xaritada ko'rish uchun bosing",
           iconBg: AppColors.lightBlue,
           trailing: organization['latitude'] == null || organization['longitude'] == null
               ? '❌'
@@ -621,12 +738,12 @@ class _StudentPortalPageState extends State<StudentPortalPage>
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderGray, width: 1),
+            border: Border.all(color: Theme.of(context).dividerColor, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),
@@ -648,10 +765,10 @@ class _StudentPortalPageState extends State<StudentPortalPage>
               const SizedBox(height: 16),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -679,10 +796,10 @@ class _StudentPortalPageState extends State<StudentPortalPage>
                             Expanded(
                               child: Text(
                                 mainText,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -761,12 +878,12 @@ class _StudentPortalPageState extends State<StudentPortalPage>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderGray, width: 1),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -776,15 +893,33 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '📋 Oxirgi Topshiriqlar',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '📋 Oxirgi Topshiriqlar',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () =>
+                    DefaultTabController.of(context).animateTo(1),
+                child: const Text(
+                  "Barchasini ko'rish →",
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           if (taskList.isEmpty)
             const Text(
               'Topshiriqlar mavjud emas',
@@ -813,7 +948,7 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   Widget _buildTaskItem({required TaskModel task}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.lightBlue,
+        color: AppColors.primaryBlue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: const Border(
           left: BorderSide(color: AppColors.primaryBlue, width: 4),
@@ -828,9 +963,9 @@ class _StudentPortalPageState extends State<StudentPortalPage>
               Expanded(
                 child: Text(
                   task.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                   ),
                 ),
@@ -873,12 +1008,12 @@ class _StudentPortalPageState extends State<StudentPortalPage>
   Widget _buildStatisticsSection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderGray, width: 1),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -888,12 +1023,12 @@ class _StudentPortalPageState extends State<StudentPortalPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '📈 Statistika',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 20),
@@ -914,36 +1049,77 @@ class _StudentPortalPageState extends State<StudentPortalPage>
     return Container(
       decoration: BoxDecoration(
         gradient: stat.gradient,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
         children: [
-          Text(
-            stat.value,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          Positioned(
+            right: -14,
+            bottom: -14,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            stat.label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              letterSpacing: 0.5,
+          Positioned(
+            right: 16,
+            bottom: 24,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
             ),
-            textAlign: TextAlign.center,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(stat.icon, color: Colors.white, size: 18),
+                ),
+                const Spacer(),
+                Text(
+                  stat.value,
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  stat.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -971,7 +1147,8 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
   @override
   void initState() {
     super.initState();
-    visibleMonth = DateTime(widget.initialDate.year, widget.initialDate.month);
+    final now = DateTime.now();
+    visibleMonth = DateTime(now.year, now.month);
   }
 
   String _key(DateTime date) {
@@ -1021,7 +1198,7 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
     final cellCount = rowCount * 7;
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       insetPadding: const EdgeInsets.all(18),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
@@ -1033,13 +1210,13 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
           children: [
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Amaliyot kunlari',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -1056,10 +1233,10 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
               children: [
                 Text(
                   '${_monthName(visibleMonth.month)} ${visibleMonth.year}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const Spacer(),
@@ -1120,7 +1297,7 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
                     color: isActive
                         ? AppColors.successGreen
                         : isToday
-                        ? AppColors.lightBlue
+                        ? AppColors.primaryBlue.withValues(alpha: 0.18)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(100),
                     border: isToday && !isActive
@@ -1136,7 +1313,9 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
                         isActive || isToday ? FontWeight.w800 : FontWeight.w500,
                         color: isActive
                             ? Colors.white
-                            : AppColors.textPrimary,
+                            : isToday
+                            ? AppColors.primaryBlue
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -1157,11 +1336,11 @@ class _InternshipCalendarDialogState extends State<InternshipCalendarDialog> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Amaliyot kuni',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const Spacer(),
@@ -1189,10 +1368,10 @@ class _WeekDayText extends StatelessWidget {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ),
